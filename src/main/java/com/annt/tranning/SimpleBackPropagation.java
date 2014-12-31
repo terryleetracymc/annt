@@ -15,8 +15,10 @@ import com.annt.network.SimpleNetwork;
 
 public class SimpleBackPropagation extends BasicBackPropagation {
 
+	public SimpleBackPropagation() {
+	}
 	/**
-	 * 
+	 * 每次只训练单样本
 	 */
 	private static final long serialVersionUID = -3478496251202109693L;
 
@@ -28,7 +30,7 @@ public class SimpleBackPropagation extends BasicBackPropagation {
 	}
 
 	@Override
-	// 训练一次
+	// 单次训练单样本
 	public void updateMatrixAndBias(DoubleMatrix input, DoubleMatrix ideal) {
 		// 获得每一层的输出
 		LinkedList<DoubleMatrix> outputs = network.getOutputs(input);
@@ -52,7 +54,6 @@ public class SimpleBackPropagation extends BasicBackPropagation {
 				.transpose());
 		// 后插
 		weights_updates.push(current_update);
-		// System.out.println(current_error.rows + "*" + current_error.columns);
 		// 用于计算残差的权值矩阵
 		DoubleMatrix w = null;
 		// 添加偏置更新
@@ -73,13 +74,13 @@ public class SimpleBackPropagation extends BasicBackPropagation {
 			// 获得下一层的输出用于计算更新矩阵
 			current_output = outputs.get(i - 1);
 			current_update = current_output.mmul(current_error.transpose());
+			weights_updates.push(current_update);
 			// 加入偏置
 			if (current_layer.bias) {
 				biass_updates.push(current_error);
 			} else {
 				biass_updates.push(null);
 			}
-			weights_updates.push(current_update);
 		}
 	}
 }

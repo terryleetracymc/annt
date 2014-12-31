@@ -7,7 +7,5 @@ import org.jblas.DoubleMatrix;
  */
 public interface TrainingOperation {
 
-	// 
-	void getUpdateMatrixs(DoubleMatrix input,
-			DoubleMatrix ideal);
+	void getUpdateMatrixs(DoubleMatrix input, DoubleMatrix ideal);
 }

@@ -9,13 +9,13 @@ import com.annt.interf.TrainingOperation;
 import com.annt.layer.BasicLayer;
 import com.annt.network.SimpleNetwork;
 
-abstract public class BasicBackPropagation implements TrainingOperation,Serializable{
+abstract public class BasicBackPropagation implements TrainingOperation,
+		Serializable {
 
 	/**
-	 * 
+	 * 针对单样本的更新
 	 */
 	private static final long serialVersionUID = 5596999972018797481L;
-
 
 	SimpleNetwork network;
 
@@ -28,10 +28,10 @@ abstract public class BasicBackPropagation implements TrainingOperation,Serializ
 	public LinkedList<DoubleMatrix> weights_updates;
 
 	public LinkedList<DoubleMatrix> biass_updates;
-	
-	public void getUpdateMatrixs(DoubleMatrix input, DoubleMatrix ideal){
+
+	public void getUpdateMatrixs(DoubleMatrix input, DoubleMatrix ideal) {
 		updateMatrixAndBias(input, ideal);
 	}
-	
+
 	abstract void updateMatrixAndBias(DoubleMatrix input, DoubleMatrix ideal);
 }
