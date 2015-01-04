@@ -17,7 +17,7 @@ public class SimpleBackPropagationDebug {
 		network.addLayer(l1);
 		network.addLayer(l2);
 		network.addLayer(l3);
-		network.initNetwork(10);
+		network.initNetwork(1);
 		DoubleMatrix inputs[] = new DoubleMatrix[4];
 		DoubleMatrix outputs[] = new DoubleMatrix[4];
 		// 输入
@@ -32,7 +32,7 @@ public class SimpleBackPropagationDebug {
 		outputs[3] = new DoubleMatrix(new double[] { 0.0 });
 
 		SimpleBackPropagation sbp = new SimpleBackPropagation(network);
-		for (int m = 0; m < 2000; m++) {
+		for (int m = 0; m < 250; m++) {
 			sbp.getUpdateMatrixs(inputs[0], outputs[0]);
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 1);
 			sbp.getUpdateMatrixs(inputs[1], outputs[1]);

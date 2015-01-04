@@ -14,10 +14,7 @@ public class SimpleBatBackPropagation extends BasicBatBackPropagation {
 	private static final long serialVersionUID = 4704221269423094177L;
 
 	public SimpleBatBackPropagation(SimpleNetwork n) {
-		network = n;
-		weights = n.weights;
-		biass = n.biass;
-		layers = n.layers;
+		super(n);
 	}
 
 	// 输入为多样本矩阵
