@@ -13,7 +13,7 @@ public class SparseBackPropagationDebug {
 
 	public static void main(String[] args) {
 		BasicLayer l1 = new BasicLayer(2, false, new SigmoidFunction());
-		BasicLayer l2 = new BasicLayer(5, true, new SigmoidFunction());
+		BasicLayer l2 = new BasicLayer(10, true, new SigmoidFunction());
 		BasicLayer l3 = new BasicLayer(1, false, new SigmoidFunction());
 		LinkedList<Integer> sparse_num = new LinkedList<Integer>();
 		sparse_num.add(0);
@@ -28,22 +28,22 @@ public class SparseBackPropagationDebug {
 		// 设置稀疏参数
 		LinkedList<DoubleMatrix> sparse_parameters = new LinkedList<DoubleMatrix>();
 		sparse_parameters.add(DoubleMatrix.zeros(2));
-		sparse_parameters.add(new DoubleMatrix(new double[] { 0.8, 0.8, 0.0,
-				0.0, 0.0 }));
+		sparse_parameters.add(new DoubleMatrix(new double[] { 0.8, 0.8, 0.8,
+				0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }));
 		sparse_parameters.add(DoubleMatrix.zeros(1));
 		sbp.setSparse(sparse_parameters);
 		// 设置抑制的输出值
-		sbp.setExcepActive(0.8);
+		sbp.setExcepActive(0.05);
 		DoubleMatrix inputs = new DoubleMatrix(new double[][] {
-				{ 0.0, 0.0, 1.0, 1.0 }, { 0.0, 1.0, 0.0, 1.0 } });
-		DoubleMatrix outputs = new DoubleMatrix(new double[][] { { 0.0, 1.0,
-				1.0, 0.0 } });
-		System.out.println(network.getActives(inputs.getColumn(1)).get(1));
-		for (int m = 0; m < 2000; m++) {
+				{ 0.5, 0.8, 0.5, 0.2 }, { 0.5, 0.1, 0.4, 0.3 } });
+		DoubleMatrix outputs = new DoubleMatrix(new double[][] { { 1.0, 0.9,
+				0.9, 0.5 } });
+		System.out.println(network.getOutputs(inputs.getColumn(1)).get(1));
+		for (int m = 0; m < 60000; m++) {
 			sbp.getUpdateMatrixs(inputs, outputs);
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 0.8);
 		}
-		System.out.println(network.getActives(inputs.getColumn(1)).get(1));
+		System.out.println(network.getOutputs(inputs.getColumn(1)).get(1));
 	}
 
 }

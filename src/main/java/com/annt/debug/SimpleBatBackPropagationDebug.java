@@ -19,15 +19,16 @@ public class SimpleBatBackPropagationDebug {
 		network.addLayer(l3);
 		network.initNetwork(1);
 		DoubleMatrix inputs = new DoubleMatrix(new double[][] {
-				{ 0.0, 0.0, 1.0, 1.0 }, { 0.0, 1.0, 0.0, 1.0 } });
-		DoubleMatrix outputs = new DoubleMatrix(new double[][] { { 0.0, 1.0,
-				1.0, 0.0 } });
+				{ 0.2, 0.1, 1.0, 0.2 }, 
+				{ 0.1, 0.5, 0.1, 1.0 } });
+		DoubleMatrix outputs = new DoubleMatrix(new double[][] { { 0.02, 0.05,
+				0.1, 0.2 } });
 		SimpleBatBackPropagation sbbp = new SimpleBatBackPropagation(network);
 		System.out.println(network.getOutput(inputs.getColumn(0)));
 		System.out.println(network.getOutput(inputs.getColumn(1)));
 		System.out.println(network.getOutput(inputs.getColumn(2)));
 		System.out.println(network.getOutput(inputs.getColumn(3)));
-		for (int m = 0; m < 800; m++) {
+		for (int m = 0; m < 10000; m++) {
 			sbbp.updateMatrixAndBias(inputs, outputs);
 			network.updateNet(sbbp.weights_updates, sbbp.biass_updates, 1.2);
 		}
@@ -35,6 +36,6 @@ public class SimpleBatBackPropagationDebug {
 		System.out.println(network.getOutput(inputs.getColumn(1)));
 		System.out.println(network.getOutput(inputs.getColumn(2)));
 		System.out.println(network.getOutput(inputs.getColumn(3)));
+		System.out.println(network.getOutput(new DoubleMatrix(new double[]{0.3,0.6})));
 	}
-
 }
