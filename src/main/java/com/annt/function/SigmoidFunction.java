@@ -10,6 +10,11 @@ import com.annt.interf.ActiveFunction;
  */
 public class SigmoidFunction implements ActiveFunction {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2997571133636391147L;
+
 	// 激活的激活值返回
 	public DoubleMatrix active(DoubleMatrix w, DoubleMatrix x, DoubleMatrix b) {
 		// 分有偏置和没有偏置的情况

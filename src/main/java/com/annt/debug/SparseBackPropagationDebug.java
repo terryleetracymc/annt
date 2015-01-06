@@ -28,22 +28,26 @@ public class SparseBackPropagationDebug {
 		// 设置稀疏参数
 		LinkedList<DoubleMatrix> sparse_parameters = new LinkedList<DoubleMatrix>();
 		sparse_parameters.add(DoubleMatrix.zeros(2));
-		sparse_parameters.add(new DoubleMatrix(new double[] { 0.8, 0.8, 0.8,
+		sparse_parameters.add(new DoubleMatrix(new double[] { 0.0, 0.0, 0.8,
 				0.8, 0.8, 0.8, 0.8, 0.8, 0.0, 0.0 }));
 		sparse_parameters.add(DoubleMatrix.zeros(1));
 		sbp.setSparse(sparse_parameters);
 		// 设置抑制的输出值
 		sbp.setExcepActive(0);
 		DoubleMatrix inputs = new DoubleMatrix(new double[][] {
-				{ 0.5, 0.8, 0.5, 0.2 }, { 0.5, 0.1, 0.4, 0.3 } });
+				{ 0.5, 0.8, 0.5, 0.2 }, 
+				{ 0.5, 0.1, 0.1, 0.3 } });
 		DoubleMatrix outputs = new DoubleMatrix(new double[][] { { 1.0, 0.9,
-				0.9, 0.5 } });
+				0.6, 0.5 } });
 		System.out.println(network.getOutputs(inputs.getColumn(1)).get(1));
-		for (int m = 0; m < 20000; m++) {
+		for (int m = 0; m < 3000; m++) {
 			sbp.getUpdateMatrixs(inputs, outputs);
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 0.8);
 		}
 		System.out.println(network.getOutputs(inputs.getColumn(1)).get(1));
+		System.out.println(network.getOutput(inputs.getColumn(0)));
+		System.out.println(network.getOutput(inputs.getColumn(1)));
+		System.out.println(network.getOutput(inputs.getColumn(2)));
 		System.out.println(network.getOutput(inputs.getColumn(3)));
 	}
 

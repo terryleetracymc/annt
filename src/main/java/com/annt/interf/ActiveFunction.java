@@ -1,12 +1,14 @@
 package com.annt.interf;
 
+import java.io.Serializable;
+
 import org.jblas.DoubleMatrix;
 
 /**
  * 
  * @author terry 激活函数接口
  */
-public interface ActiveFunction {
+public interface ActiveFunction extends Serializable {
 
 	// 输出值
 	DoubleMatrix output(DoubleMatrix w, DoubleMatrix x, DoubleMatrix b);
