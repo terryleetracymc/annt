@@ -2,6 +2,7 @@ package com.annt.sparkApp;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Random;
 
 import org.apache.spark.SparkConf;
@@ -33,25 +34,42 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 	private static final Random seed = new Random();
 	static String SPARK_URL = "spark://192.168.1.140:7077";
 	static String HDFS_URL = "hdfs://192.168.1.140:9000/user/terry/";
+	public double lamda = 0.8;
+	public double learning_rate = 0.8;
 
 	public static void main(String[] args) {
 		ANNSimpleClassiferExample classifer = new ANNSimpleClassiferExample();
 		JavaSparkContext jsc = classifer.getJSC();
 		// 建立神经网络
 		final Broadcast<SimpleNetwork> bNetwork = classifer.getNetWork(jsc);
-		String[] argments = new String[] { HDFS_URL + "MNISTDataset" };
+		String[] argments = new String[] { HDFS_URL
+				+ "MNISTDataset_sub/part-00000" };
 		// 得到样本RDD
 		JavaRDD<DoubleSample> sampleRDD = classifer.getData(jsc, argments);
-		System.out.println(sampleRDD.count());
+		//得到样本数量
+		long sampleSize=sampleRDD.count();
 		// 得到分组后数据
 		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = classifer
 				.groupDataset(sampleRDD);
+		// 缓存分组数据
+		groupedRDD = groupedRDD.cache();
+
+		//
 		// 对分组后的数据进行训练
 		JavaRDD<NetworkUpdate> updateRDD = classifer
 				.train(bNetwork, groupedRDD);
-		//
-//		NetworkUpdate result = classifer.getUpdateSum(updateRDD);
-//		System.out.println(result.matrix_updates.get(2));
+		// 获得更新矩阵总和
+		NetworkUpdate result = classifer.getUpdateSum(updateRDD);
+		// 平均更新矩阵
+		result.average(sampleSize);
+		// 带权值衰减参数
+		// 暂时不实现
+		// 使用更新矩阵更新权值矩阵
+		bNetwork.getValue().updateNet(result.matrix_updates,
+				result.biass_updates, classifer.learning_rate);
+		// 计算误差值
+		DoubleMatrix errors=classifer.getErrors(bNetwork, groupedRDD);
+		System.out.println(errors.divi(sampleSize));
 		jsc.stop();
 	}
 
@@ -64,9 +82,50 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 
 					public NetworkUpdate call(NetworkUpdate v1, NetworkUpdate v2)
 							throws Exception {
-						return null;
+						v1.add(v2);
+						return v1;
 					}
 				});
+	}
+
+	public DoubleMatrix getErrors(final Broadcast<SimpleNetwork> bNetwork,
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groudedRdd) {
+		JavaRDD<DoubleMatrix> errorRDD = groudedRdd
+				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, DoubleMatrix>() {
+
+					private static final long serialVersionUID = 7017834479083755743L;
+
+					SimpleNetwork network = bNetwork.getValue();
+
+					public DoubleMatrix call(
+							Tuple2<Integer, Iterable<DoubleSample>> v)
+							throws Exception {
+						Iterator<DoubleSample> iterator = v._2.iterator();
+						DoubleSample sample = iterator.next();
+						DoubleMatrix errors = null;
+						if (sample != null) {
+							errors = DoubleMatrix.zeros(sample.ideal.rows);
+							errors.addi(sample.ideal.subi(network.getOutput(sample.input)));
+						}
+						while (iterator.hasNext()) {
+							sample = iterator.next();
+							errors.addi(sample.ideal.subi(network.getOutput(sample.input)));
+						}
+						return errors;
+					}
+				});
+		return errorRDD.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
+					throws Exception {
+				return v1.add(v2);
+			}
+		});
 	}
 
 	// 训练
@@ -86,17 +145,15 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 						Iterator<DoubleSample> iterator = v._2.iterator();
 						DoubleSample sample = iterator.next();
 						NetworkUpdate nu = new NetworkUpdate();
+						// 训练第一个样本
+						SimpleBackPropagation sbp = new SimpleBackPropagation(
+								network);
 						if (sample != null) {
-							// 训练第一个样本
-							SimpleBackPropagation sbp = new SimpleBackPropagation(
-									network);
 							sbp.getUpdateMatrixs(sample.input, sample.ideal);
 							nu.addFirst(sbp.weights_updates, sbp.biass_updates);
 						}
 						while (iterator.hasNext()) {
 							sample = iterator.next();
-							SimpleBackPropagation sbp = new SimpleBackPropagation(
-									network);
 							sbp.getUpdateMatrixs(sample.input, sample.ideal);
 							nu.add(sbp.weights_updates, sbp.biass_updates);
 						}
@@ -125,7 +182,6 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 	// 得到JSC实例
 	public JavaSparkContext getJSC() {
 		SparkConf conf = new SparkConf();
-		conf.setAppName(ANNSimpleClassiferExample.class.getName());
 		conf.set("spark.executor.memory", "5g");
 		conf.set("spark.akka.frameSize", "5000");
 		conf.set("spark.default.parallelism", "32");
@@ -133,9 +189,10 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 		conf.set("spark.eventLog.enabled", "true");
 		conf.set("spark.eventLog.dir", HDFS_URL + "eventlog/annt");
 		conf.setJars(new String[] { HDFS_URL + "jars/sparkInterface.jar",
-				HDFS_URL + "jars/mnist.jar", "/Users/liteng/Desktop/annt.jar" });
-		conf.setMaster(SPARK_URL);
-		// conf.setMaster("local[4]");
+				HDFS_URL + "jars/mnist.jar", "/Users/terry/Desktop/annt.jar" });
+		// conf.setMaster(SPARK_URL);
+		conf.setMaster("local[4]");
+		conf.setAppName(ANNSimpleClassiferExample.class.getName());
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		return jsc;
 	}

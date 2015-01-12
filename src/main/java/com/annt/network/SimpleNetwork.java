@@ -150,9 +150,9 @@ public class SimpleNetwork extends BasicNetwork {
 			DoubleMatrix ob = biass.get(i);
 			DoubleMatrix uw = w.get(i);
 			DoubleMatrix ub = b.get(i);
-			ow = ow.sub(uw.mul(learning_rate));
+			ow.subi(uw.mul(learning_rate));
 			if (ob != null) {
-				ob.sub(ub.mul(learning_rate));
+				ob.subi(ub.mul(learning_rate));
 				biass.set(i, ob);
 			}
 			weights.set(i, ow);

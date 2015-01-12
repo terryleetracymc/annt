@@ -12,8 +12,6 @@ public class NetworkUpdate implements Serializable {
 	 */
 	private static final long serialVersionUID = 1951069583644637255L;
 
-	// 表示是多少个矩阵的更新和
-	public int numbers;
 	// 矩阵更新
 	public LinkedList<DoubleMatrix> matrix_updates;
 	// 偏置更新
@@ -22,30 +20,34 @@ public class NetworkUpdate implements Serializable {
 	public boolean isAverage;
 
 	public NetworkUpdate(LinkedList<DoubleMatrix> mu,
-			LinkedList<DoubleMatrix> bu, int n) {
+			LinkedList<DoubleMatrix> bu) {
 		matrix_updates = mu;
 		biass_updates = bu;
-		numbers = n;
 		isAverage = false;
 	}
-
-	//
-	public static NetworkUpdate add(NetworkUpdate v1, NetworkUpdate v2) {
-		NetworkUpdate result = new NetworkUpdate();
-		return result;
-	}
-
-	// 平均化
-	public void average() {
+	
+	public void average(long num){
 		for (int i = 0; i < matrix_updates.size(); i++) {
-			matrix_updates.get(i).divi(numbers);
+			matrix_updates.get(i).divi(num);
 		}
 		for (int i = 0; i < biass_updates.size(); i++) {
 			if (biass_updates.get(i) != null) {
-				biass_updates.get(i).divi(numbers);
+				biass_updates.get(i).divi(num);
 			}
 		}
 		isAverage = true;
+	}
+
+	// 相加操作
+	public void add(NetworkUpdate v) {
+		for (int i = 0; i < matrix_updates.size(); i++) {
+			matrix_updates.get(i).addi(v.matrix_updates.get(i));
+		}
+		for (int i = 0; i < biass_updates.size(); i++) {
+			if (biass_updates.get(i) != null) {
+				biass_updates.get(i).addi(v.biass_updates.get(i));
+			}
+		}
 	}
 
 	// 添加一个样本更新
@@ -58,7 +60,6 @@ public class NetworkUpdate implements Serializable {
 				biass_updates.get(i).addi(bu.get(i));
 			}
 		}
-		numbers++;
 	}
 
 	// 添加第一个样本
@@ -66,12 +67,10 @@ public class NetworkUpdate implements Serializable {
 			LinkedList<DoubleMatrix> bu) {
 		matrix_updates = mu;
 		biass_updates = bu;
-		numbers = 1;
 	}
 
 	// 无参初始化
 	public NetworkUpdate() {
-		numbers = 0;
 		matrix_updates = new LinkedList<DoubleMatrix>();
 		biass_updates = new LinkedList<DoubleMatrix>();
 	}
