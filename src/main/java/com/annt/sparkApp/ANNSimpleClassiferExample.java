@@ -2,9 +2,10 @@ package com.annt.sparkApp;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Random;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -35,7 +36,13 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 	static String SPARK_URL = "spark://192.168.1.140:7077";
 	static String HDFS_URL = "hdfs://192.168.1.140:9000/user/terry/";
 	public double lamda = 0.8;
-	public double learning_rate = 0.8;
+	public double learning_rate = 1.5;
+
+	static {
+		// 设置日志等级
+		Logger.getLogger("org").setLevel(Level.OFF);
+		Logger.getLogger("akka").setLevel(Level.OFF);
+	}
 
 	public static void main(String[] args) {
 		ANNSimpleClassiferExample classifer = new ANNSimpleClassiferExample();
@@ -46,30 +53,32 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 				+ "MNISTDataset_sub/part-00000" };
 		// 得到样本RDD
 		JavaRDD<DoubleSample> sampleRDD = classifer.getData(jsc, argments);
-		//得到样本数量
-		long sampleSize=sampleRDD.count();
+		// 得到样本数量
+		long sampleSize = sampleRDD.count();
 		// 得到分组后数据
 		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = classifer
 				.groupDataset(sampleRDD);
 		// 缓存分组数据
 		groupedRDD = groupedRDD.cache();
-
-		//
-		// 对分组后的数据进行训练
-		JavaRDD<NetworkUpdate> updateRDD = classifer
-				.train(bNetwork, groupedRDD);
-		// 获得更新矩阵总和
-		NetworkUpdate result = classifer.getUpdateSum(updateRDD);
-		// 平均更新矩阵
-		result.average(sampleSize);
-		// 带权值衰减参数
-		// 暂时不实现
-		// 使用更新矩阵更新权值矩阵
-		bNetwork.getValue().updateNet(result.matrix_updates,
-				result.biass_updates, classifer.learning_rate);
-		// 计算误差值
-		DoubleMatrix errors=classifer.getErrors(bNetwork, groupedRDD);
-		System.out.println(errors.divi(sampleSize));
+		double error = Double.MAX_VALUE;
+		while (error > 0.1) {
+			// 对分组后的数据进行训练
+			JavaRDD<NetworkUpdate> updateRDD = classifer.train(bNetwork,
+					groupedRDD);
+			// 获得更新矩阵总和
+			NetworkUpdate result = classifer.getUpdateSum(updateRDD);
+			// 平均更新矩阵
+			result.average(sampleSize);
+			// 带权值衰减参数
+			// 暂时不实现
+			// 使用更新矩阵更新权值矩阵
+			bNetwork.getValue().updateNet(result.matrix_updates,
+					result.biass_updates, classifer.learning_rate);
+			// 计算误差值
+			DoubleMatrix errors = classifer.getErrors(bNetwork, groupedRDD);
+			error = errors.divi(sampleSize).norm2();
+			System.out.println(error);
+		}
 		jsc.stop();
 	}
 
@@ -105,27 +114,30 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 						DoubleMatrix errors = null;
 						if (sample != null) {
 							errors = DoubleMatrix.zeros(sample.ideal.rows);
-							errors.addi(sample.ideal.subi(network.getOutput(sample.input)));
+							errors.addi(sample.ideal.subi(network
+									.getOutput(sample.input)));
 						}
 						while (iterator.hasNext()) {
 							sample = iterator.next();
-							errors.addi(sample.ideal.subi(network.getOutput(sample.input)));
+							errors.addi(sample.ideal.subi(network
+									.getOutput(sample.input)));
 						}
 						return errors;
 					}
 				});
-		return errorRDD.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
+		return errorRDD
+				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
 
-			/**
+					/**
 			 * 
 			 */
-			private static final long serialVersionUID = 1L;
+					private static final long serialVersionUID = 1L;
 
-			public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
-					throws Exception {
-				return v1.add(v2);
-			}
-		});
+					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
+							throws Exception {
+						return v1.add(v2);
+					}
+				});
 	}
 
 	// 训练
@@ -173,7 +185,7 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 					private static final long serialVersionUID = 7125777744084913753L;
 
 					public Integer call(DoubleSample v) throws Exception {
-						return (Math.abs(v.hashCode() + seed.nextInt())) % 32;
+						return (Math.abs(v.hashCode() + seed.nextInt())) % 20;
 					}
 				});
 		return groupedRDD;
@@ -184,14 +196,14 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 		SparkConf conf = new SparkConf();
 		conf.set("spark.executor.memory", "5g");
 		conf.set("spark.akka.frameSize", "5000");
-		conf.set("spark.default.parallelism", "32");
-		conf.set("spark.cores.max", "32");
+		conf.set("spark.default.parallelism", "10");
+		conf.set("spark.cores.max", "10");
 		conf.set("spark.eventLog.enabled", "true");
 		conf.set("spark.eventLog.dir", HDFS_URL + "eventlog/annt");
 		conf.setJars(new String[] { HDFS_URL + "jars/sparkInterface.jar",
 				HDFS_URL + "jars/mnist.jar", "/Users/terry/Desktop/annt.jar" });
-		// conf.setMaster(SPARK_URL);
-		conf.setMaster("local[4]");
+		conf.setMaster(SPARK_URL);
+		// conf.setMaster("local[4]");
 		conf.setAppName(ANNSimpleClassiferExample.class.getName());
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		return jsc;
@@ -239,6 +251,7 @@ public class ANNSimpleClassiferExample implements sparkInput, Serializable {
 	}
 
 	// spark接口输入输出
+	@SuppressWarnings("rawtypes")
 	public JavaRDDLike input(JavaSparkContext jsc, String[] input) {
 		return null;
 	}
