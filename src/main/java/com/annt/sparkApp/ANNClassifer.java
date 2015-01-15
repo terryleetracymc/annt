@@ -3,12 +3,19 @@ package com.annt.sparkApp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+
+import scala.Tuple2;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
@@ -16,10 +23,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.annt.interf.ActiveFunction;
 import com.annt.layer.BasicLayer;
 import com.annt.network.SimpleNetwork;
+import com.annt.obj.DoubleSample;
+import com.annt.obj.NetworkUpdate;
+import com.annt.tranning.SimpleBackPropagation;
 
 public class ANNClassifer implements Serializable {
 	/**
-	 * spark_annt.properties文件用于配置神经网络
+	 * spark_annt.json文件用于配置神经网络 输入为JavaRDD<DoubleSample>
 	 */
 	private static final long serialVersionUID = -7418183431014127688L;
 	// 随机数种子
@@ -42,10 +52,87 @@ public class ANNClassifer implements Serializable {
 	public static int max_time;
 
 	public static void main(String[] args) throws FileNotFoundException {
+		String inputPath = "hdfs://192.168.1.140:9000/user/terry/fakeDataset";
 		loadConf("spark_annt.json");
+		// 读取数据集
+		JavaRDD<DoubleSample> rdd = readDataset(inputPath);
+		// 数据集分组
+		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = groupDataset(rdd);
+		// 分组训练
 		jsc.stop();
 	}
 
+	public static JavaRDD<DoubleSample> readDataset(String inputPath) {
+		return jsc.objectFile(inputPath);
+	}
+
+	public static JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset(
+			JavaRDD<DoubleSample> sampleRDD) {
+		final Integer group_num = Integer.parseInt(conf
+				.get("spark.default.parallelism"));
+		return sampleRDD.groupBy(new Function<DoubleSample, Integer>() {
+			/**
+			 * 将原始输入数据分组
+			 */
+			private static final long serialVersionUID = 5527088255693151583L;
+
+			public Integer call(DoubleSample v) throws Exception {
+				return (Math.abs(v.hashCode() + seed.nextInt())) % group_num;
+			}
+		});
+	}
+	
+	// 获得更新矩阵总和
+	public static NetworkUpdate getUpdateSum(JavaRDD<NetworkUpdate> rdd){
+		return rdd.reduce(new Function2<NetworkUpdate, NetworkUpdate, NetworkUpdate>() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -5864282660589875617L;
+
+			public NetworkUpdate call(NetworkUpdate v1, NetworkUpdate v2)
+					throws Exception {
+				v1.add(v2);
+				return v1;
+			}
+		});
+	}
+
+	// 训练过程
+	public static JavaRDD<NetworkUpdate> train(
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
+		return groupRDD
+				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, NetworkUpdate>() {
+
+					/**
+					 * 训练过程
+					 */
+					private static final long serialVersionUID = 4245490350518655832L;
+
+					public NetworkUpdate call(
+							Tuple2<Integer, Iterable<DoubleSample>> v)
+							throws Exception {
+						Iterator<DoubleSample> iterator = v._2.iterator();
+						DoubleSample sample = iterator.next();
+						NetworkUpdate nu = new NetworkUpdate();
+						// 训练第一个样本
+						SimpleBackPropagation sbp = new SimpleBackPropagation(
+								network);
+						if (sample != null) {
+							sbp.getUpdateMatrixs(sample.input, sample.ideal);
+							nu.addFirst(sbp.weights_updates, sbp.biass_updates);
+						}
+						while (iterator.hasNext()) {
+							sample = iterator.next();
+							sbp.getUpdateMatrixs(sample.input, sample.ideal);
+							nu.add(sbp.weights_updates, sbp.biass_updates);
+						}
+						return nu;
+					}
+				});
+	}
+
+	// 读取spark集群和神经网络配置
 	@SuppressWarnings("resource")
 	public static boolean loadConf(String jsonPath) {
 		String content;

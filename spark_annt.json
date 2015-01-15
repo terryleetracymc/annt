@@ -10,9 +10,10 @@
 		"spark.eventLog.dir":"hdfs://192.168.1.140:9000/eventlog/annt"
 	},
 	"jars":[
-		"hdfs://192.168.1.140:9000/jars/sparkInterface.jar",
-		"hdfs://192.168.1.140:9000/jars/mnist.jar",
-		"/Users/terry/Desktop/annt.jar"
+		"hdfs://192.168.1.140:9000/user/terry/jars/sparkInterface.jar",
+		"hdfs://192.168.1.140:9000/user/terry/jars/mnist.jar",
+		"/Users/terry/Desktop/annt.jar",
+		"/Users/terry/Desktop/fastjson-1.2.3.jar"
 		],
 	"SPARK_APPNAME":"ClassiferUseSimpleBP",
 	"lamda":0.5,
