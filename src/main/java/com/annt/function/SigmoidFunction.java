@@ -14,6 +14,9 @@ public class SigmoidFunction implements ActiveFunction {
 	 * 
 	 */
 	private static final long serialVersionUID = -2997571133636391147L;
+	
+	public SigmoidFunction() {
+	}
 
 	// 激活的激活值返回
 	public DoubleMatrix active(DoubleMatrix w, DoubleMatrix x, DoubleMatrix b) {
