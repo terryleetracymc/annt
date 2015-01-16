@@ -32,7 +32,7 @@ public class SimpleBackPropagationDebug {
 		outputs[3] = new DoubleMatrix(new double[] { 0.0 });
 
 		SimpleBackPropagation sbp = new SimpleBackPropagation(network);
-		for (int m = 0; m < 250; m++) {
+		for (int m = 0; m < 1000; m++) {
 			sbp.getUpdateMatrixs(inputs[0], outputs[0]);
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 1);
 			sbp.getUpdateMatrixs(inputs[1], outputs[1]);

@@ -8,12 +8,16 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.broadcast.Broadcast;
+import org.jblas.DoubleMatrix;
 
 import scala.Tuple2;
 
@@ -51,14 +55,41 @@ public class ANNClassifer implements Serializable {
 	// 最大训练次数
 	public static int max_time;
 
+	static {
+		// 设置日志等级
+		// Logger.getLogger("org").setLevel(Level.OFF);
+		// Logger.getLogger("akka").setLevel(Level.OFF);
+	}
+
 	public static void main(String[] args) throws FileNotFoundException {
 		String inputPath = "hdfs://192.168.1.140:9000/user/terry/fakeDataset";
-		loadConf("spark_annt.json");
+		inputPath = "/Users/terry/Desktop/fakeDataset";
+		loadConf("spark_annt_local.json");
 		// 读取数据集
 		JavaRDD<DoubleSample> rdd = readDataset(inputPath);
+		// 获得数据集大小
+		long dataset_size = rdd.count();
 		// 数据集分组
 		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = groupDataset(rdd);
+		groupedRDD.cache();
+
+		// 广播network变量
+		final Broadcast<SimpleNetwork> bNetwork = jsc.broadcast(network);
+		// for (int m = 0; m < 100; m++) {
 		// 分组训练
+		JavaRDD<NetworkUpdate> updateRDD = train(bNetwork, groupedRDD);
+		// 获得更新矩阵总和
+		NetworkUpdate result = getUpdateSum(updateRDD);
+		result.average(dataset_size);
+		System.out.println(result.matrix_updates.get(1));
+		// 更新神经网络
+		bNetwork.getValue().updateNet(result.matrix_updates,
+				result.biass_updates, learning_rate);
+		// 计算误差值
+		DoubleMatrix errors = getErrors(bNetwork, groupedRDD);
+		double error = errors.divi(dataset_size).norm2();
+		System.out.println(error);
+		// }
 		jsc.stop();
 	}
 
@@ -72,7 +103,7 @@ public class ANNClassifer implements Serializable {
 				.get("spark.default.parallelism"));
 		return sampleRDD.groupBy(new Function<DoubleSample, Integer>() {
 			/**
-			 * 将原始输入数据分组
+			 * 将原始输入数据分组w
 			 */
 			private static final long serialVersionUID = 5527088255693151583L;
 
@@ -81,25 +112,71 @@ public class ANNClassifer implements Serializable {
 			}
 		});
 	}
-	
-	// 获得更新矩阵总和
-	public static NetworkUpdate getUpdateSum(JavaRDD<NetworkUpdate> rdd){
-		return rdd.reduce(new Function2<NetworkUpdate, NetworkUpdate, NetworkUpdate>() {
-			/**
+
+	public static DoubleMatrix getErrors(
+			final Broadcast<SimpleNetwork> bNetwork,
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
+		JavaRDD<DoubleMatrix> errorRDD = groupRDD
+				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, DoubleMatrix>() {
+					/**
 			 * 
 			 */
-			private static final long serialVersionUID = -5864282660589875617L;
+					private static final long serialVersionUID = 4411491857783070509L;
 
-			public NetworkUpdate call(NetworkUpdate v1, NetworkUpdate v2)
-					throws Exception {
-				v1.add(v2);
-				return v1;
-			}
-		});
+					public DoubleMatrix call(
+							Tuple2<Integer, Iterable<DoubleSample>> v)
+							throws Exception {
+						Iterator<DoubleSample> iterator = v._2.iterator();
+						DoubleSample sample = iterator.next();
+						DoubleMatrix errors = null;
+						if (sample != null) {
+							errors = DoubleMatrix.zeros(sample.ideal.rows);
+							errors.addi(sample.ideal.subi(network
+									.getOutput(sample.input)));
+						}
+						while (iterator.hasNext()) {
+							sample = iterator.next();
+							errors.addi(sample.ideal.subi(network
+									.getOutput(sample.input)));
+						}
+						return errors;
+					}
+				});
+		return errorRDD
+				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
+
+					/**
+			 * 
+			 */
+					private static final long serialVersionUID = -840656743025357422L;
+
+					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
+							throws Exception {
+						return v1.add(v2);
+					}
+				});
+	}
+
+	// 获得更新矩阵总和
+	public static NetworkUpdate getUpdateSum(JavaRDD<NetworkUpdate> rdd) {
+		return rdd
+				.reduce(new Function2<NetworkUpdate, NetworkUpdate, NetworkUpdate>() {
+					/**
+			 * 
+			 */
+					private static final long serialVersionUID = -5864282660589875617L;
+
+					public NetworkUpdate call(NetworkUpdate v1, NetworkUpdate v2)
+							throws Exception {
+						v1.add(v2);
+						return v1;
+					}
+				});
 	}
 
 	// 训练过程
 	public static JavaRDD<NetworkUpdate> train(
+			final Broadcast<SimpleNetwork> bNetwork,
 			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
 		return groupRDD
 				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, NetworkUpdate>() {
@@ -108,6 +185,7 @@ public class ANNClassifer implements Serializable {
 					 * 训练过程
 					 */
 					private static final long serialVersionUID = 4245490350518655832L;
+					SimpleNetwork net = bNetwork.getValue();
 
 					public NetworkUpdate call(
 							Tuple2<Integer, Iterable<DoubleSample>> v)
@@ -117,7 +195,7 @@ public class ANNClassifer implements Serializable {
 						NetworkUpdate nu = new NetworkUpdate();
 						// 训练第一个样本
 						SimpleBackPropagation sbp = new SimpleBackPropagation(
-								network);
+								net);
 						if (sample != null) {
 							sbp.getUpdateMatrixs(sample.input, sample.ideal);
 							nu.addFirst(sbp.weights_updates, sbp.biass_updates);
