@@ -31,96 +31,80 @@ import com.annt.obj.DoubleSample;
 import com.annt.obj.NetworkUpdate;
 import com.annt.tranning.SimpleBackPropagation;
 
-public class ANNClassifer implements Serializable {
+public class ANNSimpleClassifer implements Serializable {
 	/**
 	 * spark_annt.json文件用于配置神经网络 输入为JavaRDD<DoubleSample>
 	 */
 	private static final long serialVersionUID = -7418183431014127688L;
 	// 随机数种子
-	private static final Random seed = new Random();
+	private static Random seed = new Random();
 	// SPARK集群url地址
-	public static String SPARK_URL;
+	public String SPARK_URL;
 	// 权值衰减参数
-	public static double lamda;
+	public double lamda;
 	// 学习率
-	public static double learning_rate;
+	public double learning_rate;
 	// spark conf对象
 	public static SparkConf conf;
 	// spark context对象
 	public static JavaSparkContext jsc;
 	// 神经网络对象
-	public static SimpleNetwork network;
+	public SimpleNetwork network;
 	// 最大误差
-	public static double max_error;
+	public double max_error;
 	// 最大训练次数
-	public static int max_time;
+	public int max_time;
 
 	static {
 		// 设置日志等级
-		// Logger.getLogger("org").setLevel(Level.OFF);
-		// Logger.getLogger("akka").setLevel(Level.OFF);
+		Logger.getLogger("org").setLevel(Level.OFF);
+		Logger.getLogger("akka").setLevel(Level.OFF);
 	}
 
 	public static void main(String[] args) throws FileNotFoundException {
-		String inputPath = "hdfs://192.168.1.140:9000/user/terry/fakeDataset";
-		inputPath = "/Users/terry/Desktop/fakeDataset";
-		loadConf("spark_annt_local.json");
-		// 读取数据集
-		JavaRDD<DoubleSample> rdd = readDataset(inputPath);
-		// 获得数据集大小
-		long dataset_size = rdd.count();
-		// 数据集分组
-		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = groupDataset(rdd);
+		String inputPath = "/Users/terry/Desktop/fakeDataset";
+		ANNSimpleClassifer classifer = new ANNSimpleClassifer();
+		classifer.loadConf("spark_annt_local.json");
+		// 读取原数据
+		JavaRDD<DoubleSample> oRDD = classifer.readDataset(inputPath);
+		// 为数据分组
+		long dataset_size = oRDD.count();
+		JavaPairRDD<Integer, Iterable<DoubleSample>> groupedRDD = classifer
+				.groupDataset(oRDD);
 		groupedRDD.cache();
-
-		// 广播network变量
-		final Broadcast<SimpleNetwork> bNetwork = jsc.broadcast(network);
-		// for (int m = 0; m < 100; m++) {
-		// 分组训练
-		JavaRDD<NetworkUpdate> updateRDD = train(bNetwork, groupedRDD);
-		// 获得更新矩阵总和
-		NetworkUpdate result = getUpdateSum(updateRDD);
-		result.average(dataset_size);
-		System.out.println(result.matrix_updates.get(1));
-		// 更新神经网络
-		bNetwork.getValue().updateNet(result.matrix_updates,
-				result.biass_updates, learning_rate);
-		// 计算误差值
-		DoubleMatrix errors = getErrors(bNetwork, groupedRDD);
-		double error = errors.divi(dataset_size).norm2();
-		System.out.println(error);
-		// }
+		// 训练前将神经网络数据广播
+		final Broadcast<SimpleNetwork> bNetwork = jsc
+				.broadcast(classifer.network);
+		double error = Double.MAX_VALUE;
+		int time = 0;
+		// ////********在此迭代********\\\\\\
+		// 训练
+		while (error > classifer.max_error) {
+			JavaRDD<NetworkUpdate> updateRDD = classifer.train(bNetwork,
+					groupedRDD);
+			// 总权值更新
+			NetworkUpdate nu = classifer.getUpdateSum(updateRDD);
+			// 平均
+			nu.div(dataset_size);
+			// 使用权值更新更新神经网络
+			bNetwork.getValue().updateNet(nu.weight_updates, nu.biass_updates,
+					classifer.learning_rate);
+			// 计算误差
+			DoubleMatrix errorVector = classifer.getError(bNetwork, groupedRDD);
+			error = errorVector.div(dataset_size).norm2();
+			time++;
+			// 超过迭代次数
+			if (time > classifer.max_time) {
+				break;
+			}
+		}
 		jsc.stop();
 	}
 
-	public static JavaRDD<DoubleSample> readDataset(String inputPath) {
-		return jsc.objectFile(inputPath);
-	}
-
-	public static JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset(
-			JavaRDD<DoubleSample> sampleRDD) {
-		final Integer group_num = Integer.parseInt(conf
-				.get("spark.default.parallelism"));
-		return sampleRDD.groupBy(new Function<DoubleSample, Integer>() {
-			/**
-			 * 将原始输入数据分组w
-			 */
-			private static final long serialVersionUID = 5527088255693151583L;
-
-			public Integer call(DoubleSample v) throws Exception {
-				return (Math.abs(v.hashCode() + seed.nextInt())) % group_num;
-			}
-		});
-	}
-
-	public static DoubleMatrix getErrors(
-			final Broadcast<SimpleNetwork> bNetwork,
+	public DoubleMatrix getError(final Broadcast<SimpleNetwork> bNetwork,
 			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
 		JavaRDD<DoubleMatrix> errorRDD = groupRDD
 				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, DoubleMatrix>() {
-					/**
-			 * 
-			 */
 					private static final long serialVersionUID = 4411491857783070509L;
 
 					public DoubleMatrix call(
@@ -144,10 +128,6 @@ public class ANNClassifer implements Serializable {
 				});
 		return errorRDD
 				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
-
-					/**
-			 * 
-			 */
 					private static final long serialVersionUID = -840656743025357422L;
 
 					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
@@ -157,14 +137,11 @@ public class ANNClassifer implements Serializable {
 				});
 	}
 
-	// 获得更新矩阵总和
-	public static NetworkUpdate getUpdateSum(JavaRDD<NetworkUpdate> rdd) {
-		return rdd
+	// 聚合权值和偏置数值更新
+	public NetworkUpdate getUpdateSum(JavaRDD<NetworkUpdate> updateRDD) {
+		return updateRDD
 				.reduce(new Function2<NetworkUpdate, NetworkUpdate, NetworkUpdate>() {
-					/**
-			 * 
-			 */
-					private static final long serialVersionUID = -5864282660589875617L;
+					private static final long serialVersionUID = -8455221601784861882L;
 
 					public NetworkUpdate call(NetworkUpdate v1, NetworkUpdate v2)
 							throws Exception {
@@ -174,32 +151,27 @@ public class ANNClassifer implements Serializable {
 				});
 	}
 
-	// 训练过程
-	public static JavaRDD<NetworkUpdate> train(
+	// 训练函数
+	public JavaRDD<NetworkUpdate> train(
 			final Broadcast<SimpleNetwork> bNetwork,
-			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
-		return groupRDD
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset) {
+		return groupDataset
 				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, NetworkUpdate>() {
 
-					/**
-					 * 训练过程
-					 */
-					private static final long serialVersionUID = 4245490350518655832L;
-					SimpleNetwork net = bNetwork.getValue();
+					private static final long serialVersionUID = 4991066614187033322L;
+
+					SimpleNetwork nwk = bNetwork.getValue();
 
 					public NetworkUpdate call(
 							Tuple2<Integer, Iterable<DoubleSample>> v)
 							throws Exception {
-						Iterator<DoubleSample> iterator = v._2.iterator();
-						DoubleSample sample = iterator.next();
-						NetworkUpdate nu = new NetworkUpdate();
-						// 训练第一个样本
 						SimpleBackPropagation sbp = new SimpleBackPropagation(
-								net);
-						if (sample != null) {
-							sbp.getUpdateMatrixs(sample.input, sample.ideal);
-							nu.addFirst(sbp.weights_updates, sbp.biass_updates);
-						}
+								nwk);
+						Iterator<DoubleSample> iterator = v._2.iterator();
+						NetworkUpdate nu = new NetworkUpdate();
+						DoubleSample sample = iterator.next();
+						sbp.getUpdateMatrixs(sample.input, sample.ideal);
+						nu.addFirst(sbp.weights_updates, sbp.biass_updates);
 						while (iterator.hasNext()) {
 							sample = iterator.next();
 							sbp.getUpdateMatrixs(sample.input, sample.ideal);
@@ -210,9 +182,28 @@ public class ANNClassifer implements Serializable {
 				});
 	}
 
+	// 读取原始数据集
+	public JavaRDD<DoubleSample> readDataset(String inputPath) {
+		return jsc.objectFile(inputPath);
+	}
+
+	// 将数据集分组
+	public JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset(
+			JavaRDD<DoubleSample> dataset) {
+		final Integer group_size = Integer.parseInt(conf
+				.get("spark.default.parallelism"));
+		return dataset.groupBy(new Function<DoubleSample, Integer>() {
+			private static final long serialVersionUID = -8281625440711653868L;
+
+			public Integer call(DoubleSample v) throws Exception {
+				return Math.abs(v.hashCode() + seed.nextInt()) % group_size;
+			}
+		});
+	}
+
 	// 读取spark集群和神经网络配置
 	@SuppressWarnings("resource")
-	public static boolean loadConf(String jsonPath) {
+	public boolean loadConf(String jsonPath) {
 		String content;
 		JSONObject conf_json;
 		try {
