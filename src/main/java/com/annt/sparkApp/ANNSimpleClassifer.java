@@ -2,6 +2,9 @@ package com.annt.sparkApp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Random;
@@ -61,7 +64,7 @@ public class ANNSimpleClassifer implements Serializable {
 		Logger.getLogger("akka").setLevel(Level.OFF);
 	}
 
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws IOException {
 		String inputPath = "/Users/terry/Desktop/fakeDataset";
 		ANNSimpleClassifer classifer = new ANNSimpleClassifer();
 		classifer.loadConf("spark_annt_local.json");
@@ -89,52 +92,31 @@ public class ANNSimpleClassifer implements Serializable {
 			// 使用权值更新更新神经网络
 			bNetwork.getValue().updateNet(nu.weight_updates, nu.biass_updates,
 					classifer.learning_rate);
-			// 计算误差
-			DoubleMatrix errorVector = classifer.getError(bNetwork, groupedRDD);
-			error = errorVector.div(dataset_size).norm2();
 			time++;
-			// 超过迭代次数
-			if (time > classifer.max_time) {
+			System.out.println(time);
+			if (time >= classifer.max_time) {
 				break;
 			}
 		}
+		System.out.println(bNetwork.getValue().getOutput(
+				new DoubleMatrix(new double[] { 0.0, 0.0 })));
+		System.out.println(bNetwork.getValue().getOutput(
+				new DoubleMatrix(new double[] { 1.0, 0.0 })));
+		System.out.println(bNetwork.getValue().getOutput(
+				new DoubleMatrix(new double[] { 0.0, 1.0 })));
+		System.out.println(bNetwork.getValue().getOutput(
+				new DoubleMatrix(new double[] { 1.0, 1.0 })));
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
+				"network.nt"));
+		out.writeObject(bNetwork.getValue());
+		out.close();
 		jsc.stop();
 	}
 
-	public DoubleMatrix getError(final Broadcast<SimpleNetwork> bNetwork,
-			JavaPairRDD<Integer, Iterable<DoubleSample>> groupRDD) {
-		JavaRDD<DoubleMatrix> errorRDD = groupRDD
-				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, DoubleMatrix>() {
-					private static final long serialVersionUID = 4411491857783070509L;
+	// 权值衰减参数添加
+	public void updateNetwork(final Broadcast<SimpleNetwork> bNetwork,
+			NetworkUpdate nu) {
 
-					public DoubleMatrix call(
-							Tuple2<Integer, Iterable<DoubleSample>> v)
-							throws Exception {
-						Iterator<DoubleSample> iterator = v._2.iterator();
-						DoubleSample sample = iterator.next();
-						DoubleMatrix errors = null;
-						if (sample != null) {
-							errors = DoubleMatrix.zeros(sample.ideal.rows);
-							errors.addi(sample.ideal.subi(network
-									.getOutput(sample.input)));
-						}
-						while (iterator.hasNext()) {
-							sample = iterator.next();
-							errors.addi(sample.ideal.subi(network
-									.getOutput(sample.input)));
-						}
-						return errors;
-					}
-				});
-		return errorRDD
-				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
-					private static final long serialVersionUID = -840656743025357422L;
-
-					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
-							throws Exception {
-						return v1.add(v2);
-					}
-				});
 	}
 
 	// 聚合权值和偏置数值更新
