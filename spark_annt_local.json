@@ -9,12 +9,12 @@
 	"jars":[
 		],
 	"SPARK_APPNAME":"ClassiferUseSimpleBP",
-	"lamda":0.5,
-	"learning_rate":0.9,
+	"lamda":0,
+	"learning_rate":2,
 	"max_error":0.1,
-	"max_time":100,
+	"max_time":10000,
 	"ANN_CONF":{
-		"cell":[10,10,1],
+		"cell":[2,10,1],
 		"bias":[false,true,false],
 		"active":["com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction"],
 		"weight_ratio":1

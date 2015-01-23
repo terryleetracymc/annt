@@ -21,6 +21,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
 import org.jblas.DoubleMatrix;
+import org.jblas.MatrixFunctions;
 
 import scala.Tuple2;
 
@@ -89,23 +90,19 @@ public class ANNSimpleClassifer implements Serializable {
 			NetworkUpdate nu = classifer.getUpdateSum(updateRDD);
 			// 平均
 			nu.div(dataset_size);
+			//
+			classifer.addLamdaToUpdateNetwork(bNetwork, nu);
 			// 使用权值更新更新神经网络
 			bNetwork.getValue().updateNet(nu.weight_updates, nu.biass_updates,
 					classifer.learning_rate);
+			error = classifer.get1LError(bNetwork, groupedRDD);
+			System.out.println(error);
 			time++;
-			System.out.println(time);
 			if (time >= classifer.max_time) {
 				break;
 			}
 		}
-		System.out.println(bNetwork.getValue().getOutput(
-				new DoubleMatrix(new double[] { 0.0, 0.0 })));
-		System.out.println(bNetwork.getValue().getOutput(
-				new DoubleMatrix(new double[] { 1.0, 0.0 })));
-		System.out.println(bNetwork.getValue().getOutput(
-				new DoubleMatrix(new double[] { 0.0, 1.0 })));
-		System.out.println(bNetwork.getValue().getOutput(
-				new DoubleMatrix(new double[] { 1.0, 1.0 })));
+		// 存储网络对象
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
 				"network.nt"));
 		out.writeObject(bNetwork.getValue());
@@ -113,10 +110,15 @@ public class ANNSimpleClassifer implements Serializable {
 		jsc.stop();
 	}
 
-	// 权值衰减参数添加
-	public void updateNetwork(final Broadcast<SimpleNetwork> bNetwork,
-			NetworkUpdate nu) {
+	//
 
+	// 权值衰减参数添加
+	public void addLamdaToUpdateNetwork(
+			final Broadcast<SimpleNetwork> bNetwork, NetworkUpdate nu) {
+		SimpleNetwork nwk = bNetwork.getValue();
+		for (int i = 0; i < nwk.weights.size(); i++) {
+			nu.weight_updates.get(i).addi(nwk.weights.get(i).mul(lamda));
+		}
 	}
 
 	// 聚合权值和偏置数值更新
@@ -131,6 +133,56 @@ public class ANNSimpleClassifer implements Serializable {
 						return v1;
 					}
 				});
+	}
+
+	//
+	public DoubleMatrix getError(final Broadcast<SimpleNetwork> bNetwork,
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset) {
+		JavaRDD<DoubleMatrix> errors = groupDataset
+				.map(new Function<Tuple2<Integer, Iterable<DoubleSample>>, DoubleMatrix>() {
+
+					private static final long serialVersionUID = -6331755609959759272L;
+
+					SimpleNetwork nwk = bNetwork.getValue();
+
+					public DoubleMatrix call(
+							Tuple2<Integer, Iterable<DoubleSample>> v)
+							throws Exception {
+						Iterator<DoubleSample> iterator = v._2.iterator();
+						DoubleSample sample = iterator.next();
+						DoubleMatrix errors = DoubleMatrix
+								.zeros(sample.ideal.rows);
+						errors.addi(MatrixFunctions.abs(nwk.getOutput(
+								sample.input).sub(sample.ideal)));
+						while (iterator.hasNext()) {
+							sample = iterator.next();
+							errors.addi(MatrixFunctions.abs(nwk.getOutput(
+									sample.input).sub(sample.ideal)));
+						}
+						return errors;
+					}
+				});
+		return errors
+				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
+					private static final long serialVersionUID = -7811431207087399270L;
+
+					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
+							throws Exception {
+						return v1.add(v2);
+					}
+				});
+	}
+
+	// 获得误差
+	public double get1LError(final Broadcast<SimpleNetwork> bNetwork,
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset) {
+		return getError(bNetwork, groupDataset).norm1();
+	}
+
+	//
+	public double get2LError(final Broadcast<SimpleNetwork> bNetwork,
+			JavaPairRDD<Integer, Iterable<DoubleSample>> groupDataset) {
+		return getError(bNetwork, groupDataset).norm2();
 	}
 
 	// 训练函数

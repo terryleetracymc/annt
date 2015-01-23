@@ -40,6 +40,35 @@ public class SimpleNetwork extends BasicNetwork {
 		layers.add(l);
 	}
 
+	// 初始化权值矩阵为0，为受限玻尔兹曼训练算法
+	public boolean zeroNetwork() {
+		// 神经层不够
+		if (layers.size() < 2) {
+			return false;
+		}
+		// 上层神经网络和下一层神经网络
+		BasicLayer lowwerLayer, upperLayer;
+		// 输入输出维度
+		int input_d, output_d;
+		for (int i = 0; i < layers.size() - 1; i++) {
+			lowwerLayer = layers.get(i);
+			upperLayer = layers.get(i + 1);
+			input_d = lowwerLayer.neural_num;
+			output_d = upperLayer.neural_num;
+			// 初始化为0
+			DoubleMatrix w = DoubleMatrix.zeros(input_d, output_d);
+			weights.add(w);
+			// 初始化为0
+			if (upperLayer.bias) {
+				DoubleMatrix b = DoubleMatrix.zeros(output_d);
+				biass.add(b);
+			} else {
+				biass.add(null);
+			}
+		}
+		return true;
+	}
+
 	// 初始化神经网络
 	public boolean initNetwork(double divRatio) {
 		// 少于两层无法创建神经网络结构，divRatio等于0无法除
@@ -57,12 +86,11 @@ public class SimpleNetwork extends BasicNetwork {
 			input_d = lowwerLayer.neural_num;
 			output_d = upperLayer.neural_num;
 			// 两层神经网络确定一个权值矩阵
-			DoubleMatrix w = DoubleMatrix.randn(input_d, output_d)
-					.div(divRatio);
+			DoubleMatrix w = DoubleMatrix.rand(input_d, output_d).div(divRatio);
 			weights.add(w);
 			// 存在偏置矩阵
 			if (upperLayer.bias) {
-				DoubleMatrix b = DoubleMatrix.randn(output_d).div(divRatio);
+				DoubleMatrix b = DoubleMatrix.rand(output_d).div(divRatio);
 				biass.add(b);
 			} else {
 				biass.add(null);
