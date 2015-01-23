@@ -49,10 +49,12 @@ public class SparseBackPropagation extends BasicBatBackPropagation {
 		ActiveFunction current_function = current_layer.activeFunc;
 		DoubleMatrix sn = sparse_neural.get(output_number - 1);
 		DoubleMatrix active = actives.get(output_number - 1);
-		DoubleMatrix sparse_error=sn.mul(active.rdiv(-expect_active).add(active.rsub(1).rdiv(1-expect_active)));
+		DoubleMatrix sparse_error = sn.mul(active.rdiv(-expect_active).add(
+				active.rsub(1).rdiv(1 - expect_active)));
 		// 计算顶层残差
-		DoubleMatrix current_error = (current_output.sub(ideal).add(sparse_error))
-				.mul(current_function.derivative(current_output));
+		DoubleMatrix current_error = (current_output.sub(ideal)
+				.add(sparse_error)).mul(current_function
+				.derivative(current_output));
 		// 计算更新的第一个矩阵
 		// 获得下一层的输出
 		current_output = outputs.get(output_number - 2);
@@ -76,10 +78,11 @@ public class SparseBackPropagation extends BasicBatBackPropagation {
 			current_function = current_layer.activeFunc;
 			sn = sparse_neural.get(i);
 			active = actives.get(i);
-			sparse_error=sn.mul(active.rdiv(-expect_active).add(active.rsub(1).rdiv(1-expect_active)));
+			sparse_error = sn.mul(active.rdiv(-expect_active).add(
+					active.rsub(1).rdiv(1 - expect_active)));
 			w = weights.get(i);
-			current_error = (w.mmul(current_error).add(sparse_error)).mul(current_function
-					.derivative(current_output));
+			current_error = (w.mmul(current_error).add(sparse_error))
+					.mul(current_function.derivative(current_output));
 			// 获得下一层的输出用于计算更新矩阵
 			current_output = outputs.get(i - 1);
 			current_update = current_output.mmul(current_error.transpose());
@@ -109,11 +112,10 @@ public class SparseBackPropagation extends BasicBatBackPropagation {
 		// 激活值求和
 		for (int m = 0; m < inputs.columns; m++) {
 			input = inputs.getColumn(m);
-			tmp_actives = network.getActives(input);
+			tmp_actives = network.getOutputs(input);
 			for (int n = 0; n < active_values.size(); n++) {
-				if (tmp_actives.get(n) != null)
-					active_values.set(n,
-							active_values.get(n).add(tmp_actives.get(n)));
+				active_values.set(n,
+						active_values.get(n).add(tmp_actives.get(n)));
 			}
 		}
 		// 求平均激活值
