@@ -2,9 +2,7 @@ package com.annt.network;
 
 import java.io.Serializable;
 
-import com.annt.interf.NetOperation;
-
-abstract public class BasicNetwork implements Serializable,NetOperation {
+abstract public class BasicNetwork implements Serializable {
 
 	/**
 	 * 

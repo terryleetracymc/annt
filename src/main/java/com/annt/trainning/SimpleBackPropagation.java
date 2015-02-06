@@ -1,5 +1,6 @@
-package com.annt.tranning;
+package com.annt.trainning;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 
 import org.jblas.DoubleMatrix;
@@ -8,19 +9,24 @@ import com.annt.interf.ActiveFunction;
 import com.annt.layer.BasicLayer;
 import com.annt.network.SimpleNetwork;
 
-/**
- * 
- * @author terry 最简单的神经网络反向传播训练
- */
+public class SimpleBackPropagation implements Serializable {
 
-public class SimpleBackPropagation extends BasicBackPropagation {
-
-	public SimpleBackPropagation() {
-	}
 	/**
-	 * 每次只训练单样本
+	 * 配合SimpleNetwork的神经网络最基本反向传播算法
 	 */
-	private static final long serialVersionUID = -3478496251202109693L;
+	private static final long serialVersionUID = -4455185026355270296L;
+	// 需要训练的神经网络
+	SimpleNetwork network;
+
+	LinkedList<DoubleMatrix> weights;
+
+	LinkedList<DoubleMatrix> biass;
+
+	LinkedList<BasicLayer> layers;
+	// 各层网络权值更新数组
+	public LinkedList<DoubleMatrix> weights_updates;
+	// 各层偏置更新数组
+	public LinkedList<DoubleMatrix> biass_updates;
 
 	public SimpleBackPropagation(SimpleNetwork n) {
 		network = n;
@@ -29,8 +35,7 @@ public class SimpleBackPropagation extends BasicBackPropagation {
 		layers = n.layers;
 	}
 
-	@Override
-	// 单次训练单样本
+	// 反向更新
 	public void updateMatrixAndBias(DoubleMatrix input, DoubleMatrix ideal) {
 		// 获得每一层的输出
 		LinkedList<DoubleMatrix> outputs = network.getOutputs(input);
