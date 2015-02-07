@@ -16,13 +16,10 @@ public class SimpleBackPropagation implements Serializable {
 	 */
 	private static final long serialVersionUID = -4455185026355270296L;
 	// 需要训练的神经网络
-	SimpleNetwork network;
-
-	LinkedList<DoubleMatrix> weights;
-
-	LinkedList<DoubleMatrix> biass;
-
-	LinkedList<BasicLayer> layers;
+	public SimpleNetwork network;
+	public LinkedList<DoubleMatrix> weights;
+	public LinkedList<DoubleMatrix> biass;
+	public LinkedList<BasicLayer> layers;
 	// 各层网络权值更新数组
 	public LinkedList<DoubleMatrix> weights_updates;
 	// 各层偏置更新数组
@@ -36,6 +33,7 @@ public class SimpleBackPropagation implements Serializable {
 	}
 
 	// 反向更新
+	// 只针对单样本
 	public void updateMatrixAndBias(DoubleMatrix input, DoubleMatrix ideal) {
 		// 获得每一层的输出
 		LinkedList<DoubleMatrix> outputs = network.getOutputs(input);

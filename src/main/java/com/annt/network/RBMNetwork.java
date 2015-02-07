@@ -12,22 +12,29 @@ public class RBMNetwork extends BasicNetwork {
 	private static final long serialVersionUID = 2904054327850971298L;
 
 	// 显层和隐层神经元个数
-	int vn, hn;
+	public int vn, hn;
 	// 连接显层和隐层的权值矩阵
-	DoubleMatrix weight;
+	public DoubleMatrix weight;
 	// 显层偏置
-	DoubleMatrix vbiass;
+	public DoubleMatrix vbiass;
 	// 隐层偏置
-	DoubleMatrix hbiass;
+	public DoubleMatrix hbiass;
 	// sigmoid函数
-	SigmoidFunction sigmoid = new SigmoidFunction();
+	public SigmoidFunction sigmoid = new SigmoidFunction();
 
+	// 更新RBM网络参数
+	public void updateRBM(DoubleMatrix wu,DoubleMatrix vbu,DoubleMatrix hbu){
+		weight.addi(wu);
+		vbiass.addi(vbu);
+		hbiass.addi(hbu);
+	}
+	
 	// 初始化RBM网络结构
-	public RBMNetwork(int v, int h) {
+	public RBMNetwork(int v, int h,int divRatio) {
 		vn = v;
 		hn = h;
-		weight = DoubleMatrix.zeros(vn, hn);
-		vbiass = DoubleMatrix.zeros(vn);
+		weight = DoubleMatrix.rand(vn, hn).div(divRatio);
+		vbiass = DoubleMatrix.rand(vn).div(divRatio);
 		hbiass = DoubleMatrix.zeros(hn);
 	}
 

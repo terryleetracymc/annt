@@ -7,11 +7,12 @@ import com.annt.function.SigmoidFunction;
 import com.annt.layer.BasicLayer;
 import com.annt.network.RBMNetwork;
 import com.annt.network.SimpleNetwork;
+import com.annt.trainning.CDKBackPropagation;
 import com.annt.trainning.SimpleBackPropagation;
 
 public class ANNTest {
 
-	//@Test
+	// @Test
 	public void OneBPTest() {
 		BasicLayer l1 = new BasicLayer(2, false, new SigmoidFunction());
 		BasicLayer l2 = new BasicLayer(4, true, new SigmoidFunction());
@@ -52,9 +53,19 @@ public class ANNTest {
 	}
 
 	@Test
-	public void RBMTest(){
-		RBMNetwork rbm=new RBMNetwork(2, 3);
-		System.out.println(rbm.getVOutput(DoubleMatrix.randn(3)));
-		System.out.println(rbm.getHOutput(DoubleMatrix.randn(2)));
+	public void RBMTest() {
+		RBMNetwork rbm = new RBMNetwork(10, 5, 100);
+		DoubleMatrix sample = DoubleMatrix.rand(10);
+		CDKBackPropagation cdkBP = new CDKBackPropagation(rbm);
+		cdkBP.setK(2);
+		DoubleMatrix hOutput = null;
+		hOutput = rbm.getHOutput(sample);
+		System.out.println(rbm.getVOutput(hOutput));
+		System.out.println(sample);
+		for (int i = 0; i < 1000; i++) {
+			cdkBP.updateMatrixAndBias(sample);
+			rbm.updateRBM(cdkBP.wu, cdkBP.vbu, cdkBP.hbu);
+		}
+		System.out.println(rbm.getVOutput(hOutput));
 	}
 }
