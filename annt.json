@@ -1,0 +1,6 @@
+{
+	"cell":[2,10,1],
+	"bias":[false,true,false],
+	"active":["com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction"],
+	"weight_ratio":100
+}

@@ -23,17 +23,30 @@ public class RBMNetwork extends BasicNetwork {
 	public SigmoidFunction sigmoid = new SigmoidFunction();
 
 	// 更新RBM网络参数
-	public void updateRBM(DoubleMatrix wu,DoubleMatrix vbu,DoubleMatrix hbu){
-		weight.addi(wu);
-		vbiass.addi(vbu);
-		hbiass.addi(hbu);
+	public void updateRBM(DoubleMatrix wu, DoubleMatrix vbu, DoubleMatrix hbu,
+			double learning_rate) {
+		weight.addi(wu.mul(learning_rate));
+		vbiass.addi(vbu.mul(learning_rate));
+		hbiass.addi(hbu.mul(learning_rate));
 	}
-	
+
 	// 初始化RBM网络结构
-	public RBMNetwork(int v, int h,int divRatio) {
+	public RBMNetwork(int v, int h, int divRatio) {
 		vn = v;
 		hn = h;
 		weight = DoubleMatrix.rand(vn, hn).div(divRatio);
+		// 根据给定的样本集确定可视层的偏置数值
+		// 待实现
+		vbiass = DoubleMatrix.rand(vn).div(divRatio);
+		hbiass = DoubleMatrix.zeros(hn);
+	}
+
+	//
+	public RBMNetwork(int v, int h, int divRatio, DoubleMatrix datasets) {
+		vn = v;
+		hn = h;
+		weight = DoubleMatrix.rand(vn, hn).div(divRatio);
+		// ******************
 		vbiass = DoubleMatrix.rand(vn).div(divRatio);
 		hbiass = DoubleMatrix.zeros(hn);
 	}

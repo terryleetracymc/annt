@@ -1,9 +1,18 @@
 package com.annt.network;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 
 import org.jblas.DoubleMatrix;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.annt.interf.ActiveFunction;
 import com.annt.layer.BasicLayer;
 
@@ -24,6 +33,69 @@ public class SimpleNetwork extends BasicNetwork {
 		layers = new LinkedList<BasicLayer>();
 		weights = new LinkedList<DoubleMatrix>();
 		biass = new LinkedList<DoubleMatrix>();
+	}
+
+	// 序列化存储神经网络
+	public static void saveNetwork(String path, SimpleNetwork network) {
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(
+					new FileOutputStream(path));
+			out.writeObject(network);
+			out.close();
+		} catch (FileNotFoundException e) {
+			// log
+			e.printStackTrace();
+		} catch (IOException e) {
+			// log
+			e.printStackTrace();
+		}
+	}
+
+	// 载入神经网络
+	public static SimpleNetwork loadNetwork(String path) {
+		try {
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream(
+					path));
+			SimpleNetwork network = (SimpleNetwork) in.readObject();
+			in.close();
+			return network;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public SimpleNetwork(JSONObject json) {
+		JSONArray cell_array = json.getJSONArray("cell");
+		JSONArray bias_array = json.getJSONArray("bias");
+		JSONArray active_array = json.getJSONArray("active");
+		double weight_ratio = json.getDouble("weight_ratio");
+		//
+		layers = new LinkedList<BasicLayer>();
+		weights = new LinkedList<DoubleMatrix>();
+		biass = new LinkedList<DoubleMatrix>();
+		try {
+			for (int i = 0; i < cell_array.size(); i++) {
+				// 反射获得激活函数
+				Class<?> c = Class.forName(active_array.getString(i));
+				ActiveFunction func = (ActiveFunction) c.newInstance();
+				addLayer(new BasicLayer(cell_array.getIntValue(i),
+						bias_array.getBooleanValue(i), func));
+			}
+		} catch (JSONException e) {
+			System.err.println("JSON解析错误...");
+		} catch (ClassNotFoundException e) {
+			System.err.println("未定义激活函数");
+		} catch (InstantiationException e) {
+			System.err.println("激活函数无构造函数");
+		} catch (IllegalAccessException e) {
+			System.err.println("激活函数权限出错");
+		}
+		initNetwork(weight_ratio);
 	}
 
 	public LinkedList<DoubleMatrix> getOutputs(DoubleMatrix input) {

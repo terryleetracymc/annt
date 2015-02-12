@@ -1,17 +1,37 @@
 package com.annt.junit;
 
+import java.io.FileNotFoundException;
+
 import org.jblas.DoubleMatrix;
 import org.junit.Test;
 
+import com.alibaba.fastjson.JSONObject;
 import com.annt.function.SigmoidFunction;
 import com.annt.layer.BasicLayer;
 import com.annt.network.RBMNetwork;
 import com.annt.network.SimpleNetwork;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.trainning.SimpleBackPropagation;
+import com.annt.utils.CommonUtils;
 
 public class ANNTest {
 
+	@Test
+	public void SaveLoadTest(){
+		BasicLayer l1 = new BasicLayer(2, false, new SigmoidFunction());
+		BasicLayer l2 = new BasicLayer(4, true, new SigmoidFunction());
+		BasicLayer l3 = new BasicLayer(1, false, new SigmoidFunction());
+		SimpleNetwork network = new SimpleNetwork();
+		network.addLayer(l1);
+		network.addLayer(l2);
+		network.addLayer(l3);
+		network.initNetwork(100);
+		System.out.println(network.weights.get(0));
+		SimpleNetwork.saveNetwork("network.nt", network);
+		SimpleNetwork anet=SimpleNetwork.loadNetwork("network.nt");
+		System.out.println(anet.weights.get(0));
+	}
+	
 	// @Test
 	public void OneBPTest() {
 		BasicLayer l1 = new BasicLayer(2, false, new SigmoidFunction());
@@ -52,20 +72,29 @@ public class ANNTest {
 		System.out.println(network.getOutput(inputs[3]));
 	}
 
-	@Test
+	// @Test
 	public void RBMTest() {
-		RBMNetwork rbm = new RBMNetwork(10, 5, 100);
-		DoubleMatrix sample = DoubleMatrix.rand(10);
+		RBMNetwork rbm = new RBMNetwork(5, 3, 100);
+		DoubleMatrix sample = DoubleMatrix.rand(5);
 		CDKBackPropagation cdkBP = new CDKBackPropagation(rbm);
-		cdkBP.setK(2);
+		cdkBP.setK(1);
 		DoubleMatrix hOutput = null;
 		hOutput = rbm.getHOutput(sample);
 		System.out.println(rbm.getVOutput(hOutput));
 		System.out.println(sample);
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 10; i++) {
 			cdkBP.updateMatrixAndBias(sample);
-			rbm.updateRBM(cdkBP.wu, cdkBP.vbu, cdkBP.hbu);
+			rbm.updateRBM(cdkBP.wu, cdkBP.vbu, cdkBP.hbu, 1);
 		}
+		hOutput = rbm.getHOutput(sample);
 		System.out.println(rbm.getVOutput(hOutput));
+	}
+
+	// @Test
+	public void ANNInitByJSON() throws FileNotFoundException {
+		JSONObject json = JSONObject.parseObject(CommonUtils
+				.readJSONText("annt.json"));
+		SimpleNetwork network = new SimpleNetwork(json);
+		System.out.println(network.weights.get(1));
 	}
 }
