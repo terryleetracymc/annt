@@ -35,6 +35,71 @@ public class SimpleNetwork extends BasicNetwork {
 		biass = new LinkedList<DoubleMatrix>();
 	}
 
+	// 前向添加神经网络
+	// this 神经网络:输入的偏置为null->upperLayer
+	// 添加的神经网络 net:输出层代替this神经网络的输入层神经网络->lowwerLayer
+	public boolean addLowwerNetwork(SimpleNetwork net) {
+		BasicLayer lowwerLayer = net.layers.getLast();
+		BasicLayer upperLayer = layers.getFirst();
+		// 输入输出不匹配
+		if (lowwerLayer.neural_num != upperLayer.neural_num) {
+			// log
+			return false;
+		}
+		// 权值是否匹配
+		if (upperLayer.bias) {
+			return false;
+		}
+		LinkedList<DoubleMatrix> ws = net.weights;
+		LinkedList<DoubleMatrix> bs = net.biass;
+		LinkedList<BasicLayer> ls = net.layers;
+		// 添加权值矩阵
+		for (int i = weights.size() - 1; i >= 0; i--) {
+			weights.push(ws.get(i));
+		}
+		// 添加偏置矩阵
+		biass.removeFirst();
+		for (int i = bs.size() - 1; i >= 0; i--) {
+			biass.push(bs.get(i));
+		}
+		// 添加神经层
+		layers.removeFirst();
+		for (int i = ls.size() - 1; i >= 0; i--) {
+			layers.push(ls.get(i));
+		}
+		return true;
+	}
+
+	// 后向添加神经网络
+	public boolean addUpperNetwork(SimpleNetwork net) {
+		BasicLayer lowwerLayer = layers.getLast();
+		BasicLayer upperLayer = net.layers.getFirst();
+		// 输入输出不匹配
+		if (lowwerLayer.neural_num != upperLayer.neural_num) {
+			return false;
+		}
+		// 权值是否匹配
+		if (upperLayer.bias) {
+			return false;
+		}
+		LinkedList<DoubleMatrix> ws = net.weights;
+		LinkedList<DoubleMatrix> bs = net.biass;
+		LinkedList<BasicLayer> ls = net.layers;
+		// 添加权值矩阵
+		for (int i = 0; i < weights.size(); i++) {
+			weights.add(ws.get(i));
+		}
+		// 添加偏置矩阵
+		for (int i = 1; i < bs.size(); i++) {
+			biass.add(bs.get(i));
+		}
+		// 添加神经层
+		for (int i = 1; i < ls.size(); i++) {
+			layers.add(ls.get(i));
+		}
+		return true;
+	}
+
 	// 序列化存储神经网络
 	public static void saveNetwork(String path, SimpleNetwork network) {
 		try {
@@ -69,6 +134,7 @@ public class SimpleNetwork extends BasicNetwork {
 		return null;
 	}
 
+	// 使用json对象初始化神经网络
 	public SimpleNetwork(JSONObject json) {
 		JSONArray cell_array = json.getJSONArray("cell");
 		JSONArray bias_array = json.getJSONArray("bias");
@@ -87,6 +153,7 @@ public class SimpleNetwork extends BasicNetwork {
 						bias_array.getBooleanValue(i), func));
 			}
 		} catch (JSONException e) {
+			// log
 			System.err.println("JSON解析错误...");
 		} catch (ClassNotFoundException e) {
 			System.err.println("未定义激活函数");

@@ -3,6 +3,7 @@ package com.annt.network;
 import org.jblas.DoubleMatrix;
 
 import com.annt.function.SigmoidFunction;
+import com.annt.layer.BasicLayer;
 
 public class RBMNetwork extends BasicNetwork {
 
@@ -28,6 +29,26 @@ public class RBMNetwork extends BasicNetwork {
 		weight.addi(wu.mul(learning_rate));
 		vbiass.addi(vbu.mul(learning_rate));
 		hbiass.addi(hbu.mul(learning_rate));
+	}
+
+	// 将RBM网络结构返回定义的神经网络层
+	public SimpleNetwork getNetwork() {
+		SimpleNetwork network = new SimpleNetwork();
+		network.addLayer(new BasicLayer(vn, false, new SigmoidFunction()));
+		network.addLayer(new BasicLayer(hn, true, new SigmoidFunction()));
+		network.weights.add(weight);
+		network.biass.add(vbiass);
+		return network;
+	}
+
+	// 返回RBM的反向神经网络结构
+	public SimpleNetwork getRNetwork() {
+		SimpleNetwork network = new SimpleNetwork();
+		network.addLayer(new BasicLayer(hn, false, new SigmoidFunction()));
+		network.addLayer(new BasicLayer(vn, true, new SigmoidFunction()));
+		network.weights.add(weight.transpose());
+		network.biass.add(hbiass);
+		return network;
 	}
 
 	// 初始化RBM网络结构
