@@ -98,4 +98,25 @@ public class ANNTest {
 		SimpleNetwork network = new SimpleNetwork(json);
 		System.out.println(network.weights.get(1));
 	}
+
+	@Test
+	public void ANNConnectTest() {
+		SimpleNetwork n1 = new SimpleNetwork();
+		n1.addLayer(new BasicLayer(10, false, new SigmoidFunction()));
+		n1.addLayer(new BasicLayer(5, true, new SigmoidFunction()));
+		n1.initNetwork();
+		SimpleNetwork n2 = new SimpleNetwork();
+		n2.addLayer(new BasicLayer(5, false, new SigmoidFunction()));
+		n2.addLayer(new BasicLayer(10, true, new SigmoidFunction()));
+		n2.initNetwork();
+		boolean result=n2.addLowwerNetwork(n1);
+//		System.out.println(n1.layers.size());
+//		System.out.println(n1.biass.size());
+//		System.out.println(n1.weights.size());
+		System.out.println(n2.layers.get(0).neural_num);
+		System.out.println(n2.layers.get(1).neural_num);
+		System.out.println(n2.layers.get(2).neural_num);
+		System.out.println(n2.getOutput(DoubleMatrix.rand(10)));
+		System.out.println(result);
+	}
 }

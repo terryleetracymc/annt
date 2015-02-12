@@ -57,8 +57,6 @@ public class SimpleNetwork extends BasicNetwork {
 		for (int i = weights.size() - 1; i >= 0; i--) {
 			weights.push(ws.get(i));
 		}
-		// 添加偏置矩阵
-		biass.removeFirst();
 		for (int i = bs.size() - 1; i >= 0; i--) {
 			biass.push(bs.get(i));
 		}
@@ -90,7 +88,7 @@ public class SimpleNetwork extends BasicNetwork {
 			weights.add(ws.get(i));
 		}
 		// 添加偏置矩阵
-		for (int i = 1; i < bs.size(); i++) {
+		for (int i = 0; i < bs.size(); i++) {
 			biass.add(bs.get(i));
 		}
 		// 添加神经层
