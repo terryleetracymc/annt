@@ -1,6 +1,9 @@
 package com.annt.junit;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 
 import org.jblas.DoubleMatrix;
 import org.junit.Test;
@@ -13,6 +16,7 @@ import com.annt.network.SimpleNetwork;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.trainning.SimpleBackPropagation;
 import com.annt.utils.CommonUtils;
+import com.smiims.obj.GeoTSShortVector;
 
 public class ANNTest {
 
@@ -82,7 +86,7 @@ public class ANNTest {
 		hOutput = rbm.getHOutput(sample);
 		System.out.println(rbm.getVOutput(hOutput));
 		System.out.println(sample);
-		for (int i = 0; i < 3000; i++) {
+		for (int i = 0; i < 1000; i++) {
 			cdkBP.updateMatrixAndBias(sample);
 			rbm.updateRBM(cdkBP.wu, cdkBP.vbu, cdkBP.hbu, 1);
 		}
@@ -100,6 +104,18 @@ public class ANNTest {
 	}
 
 	@Test
+	public void loadDatsetTest() throws FileNotFoundException, IOException,
+			ClassNotFoundException {
+		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
+				"/Users/terry/Desktop/ts.dat"));
+		for (int i = 0; i < 274 * 214; i++) {
+			GeoTSShortVector vector = (GeoTSShortVector) in.readObject();
+			System.out.println(vector.x + ":" + vector.y);
+		}
+		System.out.println("done");
+	}
+
+	// @Test
 	public void ANNConnectTest() {
 		SimpleNetwork n1 = new SimpleNetwork();
 		n1.addLayer(new BasicLayer(10, false, new SigmoidFunction()));
@@ -109,10 +125,7 @@ public class ANNTest {
 		n2.addLayer(new BasicLayer(5, false, new SigmoidFunction()));
 		n2.addLayer(new BasicLayer(10, true, new SigmoidFunction()));
 		n2.initNetwork();
-		boolean result=n2.addLowwerNetwork(n1);
-//		System.out.println(n1.layers.size());
-//		System.out.println(n1.biass.size());
-//		System.out.println(n1.weights.size());
+		boolean result = n2.addLowwerNetwork(n1);
 		System.out.println(n2.layers.get(0).neural_num);
 		System.out.println(n2.layers.get(1).neural_num);
 		System.out.println(n2.layers.get(2).neural_num);

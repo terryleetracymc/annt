@@ -59,10 +59,10 @@ public class RBMNetwork extends BasicNetwork {
 		// 根据给定的样本集确定可视层的偏置数值
 		// 待实现
 		vbiass = DoubleMatrix.rand(vn).div(divRatio);
-		hbiass = DoubleMatrix.zeros(hn);
+		hbiass = DoubleMatrix.rand(hn).div(divRatio);
 	}
 
-	//
+	// 根据样本初始化RBM权值
 	public RBMNetwork(int v, int h, int divRatio, DoubleMatrix datasets) {
 		vn = v;
 		hn = h;
