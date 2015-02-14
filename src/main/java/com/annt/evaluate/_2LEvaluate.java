@@ -13,7 +13,7 @@ public class _2LEvaluate extends BasicEvaluate {
 	@Override
 	public double getError(DoubleMatrix input, DoubleMatrix ideal) {
 		DoubleMatrix result = MatrixFunctions.abs(input.sub(ideal));
-		return MatrixFunctions.pow(result, 2).mean();
+		return result.norm2();
 	}
 
 }
