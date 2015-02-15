@@ -1,6 +1,8 @@
-package com.annt.obj;
+package com.annt.junit;
 
 import org.jblas.DoubleMatrix;
+
+import com.annt.obj.UnLabeledDoubleSample;
 
 public class PixelUnLabeledDoubleSample extends UnLabeledDoubleSample {
 

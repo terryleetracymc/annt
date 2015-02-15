@@ -36,8 +36,8 @@ public class RBMNetwork extends BasicNetwork {
 		SimpleNetwork network = new SimpleNetwork();
 		network.addLayer(new BasicLayer(vn, false, new SigmoidFunction()));
 		network.addLayer(new BasicLayer(hn, true, new SigmoidFunction()));
-		network.weights.add(new DoubleMatrix().copy(weight));
-		network.biass.add(new DoubleMatrix().copy(hbiass));
+		network.weights.add(weight);
+		network.biass.add(hbiass);
 		return network;
 	}
 
@@ -46,8 +46,8 @@ public class RBMNetwork extends BasicNetwork {
 		SimpleNetwork network = new SimpleNetwork();
 		network.addLayer(new BasicLayer(hn, false, new SigmoidFunction()));
 		network.addLayer(new BasicLayer(vn, true, new SigmoidFunction()));
-		network.weights.add(new DoubleMatrix().copy(weight.transpose()));
-		network.biass.add(new DoubleMatrix().copy(vbiass));
+		network.weights.add(weight.transpose());
+		network.biass.add(vbiass);
 		return network;
 	}
 

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 import org.jblas.DoubleMatrix;
+import org.junit.After;
 import org.junit.Test;
 
 import com.annt.app.BaseApp;
@@ -30,6 +31,7 @@ public class StandaloneApp extends BaseApp {
 		return result;
 	}
 
+	// 根据样本初始化RBM
 	public void getTargetRBM(DoubleMatrix dataset, RBMNetwork rbm,
 			double max_error, int time, double learning_rate, int cd_k) {
 		DoubleMatrix sample = null;
@@ -61,24 +63,40 @@ public class StandaloneApp extends BaseApp {
 						.getHOutput(sample));
 				error += evaluate.getError(sample, restoreSign);
 			}
-			// System.out.println(error);
+			System.out.println(error / dataset.columns);
 			if (error / dataset.columns < max_error) {
 				break;
 			}
 		}
 	}
 
+	// 使用RBM生成第一层网络
 	@Test
-	public void testRBM() throws FileNotFoundException, ClassNotFoundException,
-			IOException {
+	public void RBMGenerateL1() throws FileNotFoundException,
+			ClassNotFoundException, IOException {
+		// int idx = 100;
 		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts.dat");
-		RBMNetwork rbm = new RBMNetwork(25, 20, 100);
-		getTargetRBM(dataset, rbm, 0.2, 5, 0.5, 5);
+		RBMNetwork rbm = new RBMNetwork(25, 15, 100);
+		getTargetRBM(dataset, rbm, 0.3, 30, 0.5, 1);
 		SimpleNetwork firstNetwork = rbm.getNetwork();
+		// 存储第一层特征提取层网络
+		SimpleNetwork.saveNetwork("rbm/ts_l1", firstNetwork);
 		SimpleNetwork secondNetwork = rbm.getRNetwork();
 		firstNetwork.addUpperNetwork(secondNetwork);
-		int idx = 15;
-		System.out.println(dataset.getColumn(idx));
-		System.out.println(firstNetwork.getOutput(dataset.getColumn(idx)));
+		// System.out.println(dataset.getColumn(idx));
+		// System.out.println(firstNetwork.getOutput(dataset.getColumn(idx)));
+		// 存储特征提取层网络以及信号恢复层网络
+		SimpleNetwork.saveNetwork("rbm/ts_l1r.nt", firstNetwork);
+	}
+
+	// 载入RBM第一层模型使用BP
+	// @Test
+	public void L1Training() throws FileNotFoundException,
+			ClassNotFoundException, IOException {
+		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts.dat");
+		SimpleNetwork ts_l1r = SimpleNetwork.loadNetwork("rbm/ts_l1r.nt");
+		for (int i = 0; i < 25; i++)
+			System.out.println(ts_l1r.getOutput(DoubleMatrix.zeros(25)
+					.put(i, 1)));
 	}
 }

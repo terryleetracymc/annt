@@ -15,7 +15,6 @@ import com.annt.function.SigmoidFunction;
 import com.annt.layer.BasicLayer;
 import com.annt.network.RBMNetwork;
 import com.annt.network.SimpleNetwork;
-import com.annt.obj.PixelUnLabeledDoubleSample;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.trainning.SimpleBackPropagation;
 import com.annt.utils.CommonUtils;
@@ -39,13 +38,12 @@ public class ANNTest {
 		System.out.println(anet.weights.get(0));
 	}
 
-	@Test
+	// @Test
 	public void RBMTSTest() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
 				"/Users/terry/Desktop/dts.dat"));
-		DoubleMatrix dataset = (DoubleMatrix) in
-				.readObject();
+		DoubleMatrix dataset = (DoubleMatrix) in.readObject();
 		System.out.println(dataset.length);
 		in.close();
 	}
@@ -117,29 +115,29 @@ public class ANNTest {
 		System.out.println(network.weights.get(1));
 	}
 
-	// @Test
+	@Test
 	public void loadDatsetTest() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
 				"/Users/terry/Desktop/ts.dat"));
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
 				"/Users/terry/Desktop/dts.dat"));
-		// ArrayList<PixelUnLabeledDoubleSample> dataset = new
-		// ArrayList<PixelUnLabeledDoubleSample>();
-		DoubleMatrix dataset = new DoubleMatrix(25, 274 * 214);
-		for (int i = 0; i < 274 * 214; i++) {
+		int sum = 100 * 100;
+		DoubleMatrix dataset = new DoubleMatrix(25, sum);
+		for (int i = 0; i < sum; i++) {
 			GeoTSShortVector vector = (GeoTSShortVector) in.readObject();
-			int x = vector.x;
-			int y = vector.y;
+			// int x = vector.x;
+			// int y = vector.y;
 			double d[] = new double[vector.data.length];
 			for (int j = 0; j < d.length; j++) {
 				d[j] = vector.data[j];
 				d[j] = (d[j] + 2000) / 12000;
 			}
 			DoubleMatrix data = new DoubleMatrix(d);
-			PixelUnLabeledDoubleSample sample = new PixelUnLabeledDoubleSample(
-					data, x, y);
-			dataset.putColumn(i, sample.input);
+			// PixelUnLabeledDoubleSample sample = new
+			// PixelUnLabeledDoubleSample(
+			// data, x, y);
+			dataset.putColumn(i, data);
 		}
 		out.writeObject(dataset);
 		out.close();
