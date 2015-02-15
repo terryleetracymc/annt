@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 
 import org.jblas.DoubleMatrix;
 import org.junit.Test;
@@ -40,13 +39,14 @@ public class ANNTest {
 		System.out.println(anet.weights.get(0));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void RBMTSTest() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
 				"/Users/terry/Desktop/dts.dat"));
-		ArrayList<PixelUnLabeledDoubleSample> dataset=(ArrayList<PixelUnLabeledDoubleSample>) in.readObject();
+		DoubleMatrix dataset = (DoubleMatrix) in
+				.readObject();
+		System.out.println(dataset.length);
 		in.close();
 	}
 
@@ -124,7 +124,9 @@ public class ANNTest {
 				"/Users/terry/Desktop/ts.dat"));
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
 				"/Users/terry/Desktop/dts.dat"));
-		ArrayList<PixelUnLabeledDoubleSample> dataset = new ArrayList<PixelUnLabeledDoubleSample>();
+		// ArrayList<PixelUnLabeledDoubleSample> dataset = new
+		// ArrayList<PixelUnLabeledDoubleSample>();
+		DoubleMatrix dataset = new DoubleMatrix(25, 274 * 214);
 		for (int i = 0; i < 274 * 214; i++) {
 			GeoTSShortVector vector = (GeoTSShortVector) in.readObject();
 			int x = vector.x;
@@ -137,7 +139,7 @@ public class ANNTest {
 			DoubleMatrix data = new DoubleMatrix(d);
 			PixelUnLabeledDoubleSample sample = new PixelUnLabeledDoubleSample(
 					data, x, y);
-			dataset.add(sample);
+			dataset.putColumn(i, sample.input);
 		}
 		out.writeObject(dataset);
 		out.close();

@@ -54,7 +54,7 @@ public class SimpleNetwork extends BasicNetwork {
 		LinkedList<DoubleMatrix> bs = net.biass;
 		LinkedList<BasicLayer> ls = net.layers;
 		// 添加权值矩阵
-		for (int i = weights.size() - 1; i >= 0; i--) {
+		for (int i = ws.size() - 1; i >= 0; i--) {
 			weights.push(ws.get(i));
 		}
 		for (int i = bs.size() - 1; i >= 0; i--) {
@@ -84,7 +84,7 @@ public class SimpleNetwork extends BasicNetwork {
 		LinkedList<DoubleMatrix> bs = net.biass;
 		LinkedList<BasicLayer> ls = net.layers;
 		// 添加权值矩阵
-		for (int i = 0; i < weights.size(); i++) {
+		for (int i = 0; i < ws.size(); i++) {
 			weights.add(ws.get(i));
 		}
 		// 添加偏置矩阵

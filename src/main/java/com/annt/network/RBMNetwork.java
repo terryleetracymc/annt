@@ -36,8 +36,8 @@ public class RBMNetwork extends BasicNetwork {
 		SimpleNetwork network = new SimpleNetwork();
 		network.addLayer(new BasicLayer(vn, false, new SigmoidFunction()));
 		network.addLayer(new BasicLayer(hn, true, new SigmoidFunction()));
-		network.weights.add(weight);
-		network.biass.add(vbiass);
+		network.weights.add(new DoubleMatrix().copy(weight));
+		network.biass.add(new DoubleMatrix().copy(hbiass));
 		return network;
 	}
 
@@ -46,8 +46,8 @@ public class RBMNetwork extends BasicNetwork {
 		SimpleNetwork network = new SimpleNetwork();
 		network.addLayer(new BasicLayer(hn, false, new SigmoidFunction()));
 		network.addLayer(new BasicLayer(vn, true, new SigmoidFunction()));
-		network.weights.add(weight.transpose());
-		network.biass.add(hbiass);
+		network.weights.add(new DoubleMatrix().copy(weight.transpose()));
+		network.biass.add(new DoubleMatrix().copy(vbiass));
 		return network;
 	}
 
@@ -56,19 +56,7 @@ public class RBMNetwork extends BasicNetwork {
 		vn = v;
 		hn = h;
 		weight = DoubleMatrix.rand(vn, hn).div(divRatio);
-		// 根据给定的样本集确定可视层的偏置数值
-		// 待实现
-		vbiass = DoubleMatrix.rand(vn).div(divRatio);
-		hbiass = DoubleMatrix.rand(hn).div(divRatio);
-	}
-
-	// 根据样本初始化RBM权值
-	public RBMNetwork(int v, int h, int divRatio, DoubleMatrix datasets) {
-		vn = v;
-		hn = h;
-		weight = DoubleMatrix.rand(vn, hn).div(divRatio);
-		// ******************
-		vbiass = DoubleMatrix.rand(vn).div(divRatio);
+		vbiass = DoubleMatrix.zeros(vn);
 		hbiass = DoubleMatrix.zeros(hn);
 	}
 
