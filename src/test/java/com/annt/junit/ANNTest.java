@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Random;
 
 import org.jblas.DoubleMatrix;
 import org.junit.Test;
@@ -115,14 +116,43 @@ public class ANNTest {
 		System.out.println(network.weights.get(1));
 	}
 
-	@Test
-	public void loadDatsetTest() throws FileNotFoundException, IOException,
+	// @Test
+	public void generateSubDataset() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
+		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
+				"/Users/terry/Desktop/dts_all.dat"));
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
+				"/Users/terry/Desktop/dts_sub.dat"));
+		int sub_size = 1000;
+		DoubleMatrix dataset = (DoubleMatrix) in.readObject();
+		DoubleMatrix sub_data = new DoubleMatrix(25, sub_size);
+		boolean isSelected[] = new boolean[214 * 274];
+		Random rand = new Random();
+		for (int i = 0; i < sub_size; i++) {
+			int x = Math.abs(rand.nextInt()) % 214;
+			int y = Math.abs(rand.nextInt()) % 274;
+			int idx = x + y * 214;
+			if (isSelected[idx]) {
+				i--;
+				continue;
+			}
+			isSelected[idx] = true;
+			DoubleMatrix sample = dataset.getColumn(idx);
+			sub_data.putColumn(i, sample);
+		}
+		out.writeObject(sub_data);
+		out.close();
+		in.close();
+	}
+
+	// @Test
+	public void generateDoubleMatrixDataset() throws FileNotFoundException,
+			IOException, ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
 				"/Users/terry/Desktop/ts.dat"));
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
-				"/Users/terry/Desktop/dts.dat"));
-		int sum = 100 * 100;
+				"/Users/terry/Desktop/dts_all.dat"));
+		int sum = 214 * 274;
 		DoubleMatrix dataset = new DoubleMatrix(25, sum);
 		for (int i = 0; i < sum; i++) {
 			GeoTSShortVector vector = (GeoTSShortVector) in.readObject();
@@ -134,9 +164,6 @@ public class ANNTest {
 				d[j] = (d[j] + 2000) / 12000;
 			}
 			DoubleMatrix data = new DoubleMatrix(d);
-			// PixelUnLabeledDoubleSample sample = new
-			// PixelUnLabeledDoubleSample(
-			// data, x, y);
 			dataset.putColumn(i, data);
 		}
 		out.writeObject(dataset);

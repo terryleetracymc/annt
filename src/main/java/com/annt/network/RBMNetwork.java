@@ -1,5 +1,12 @@
 package com.annt.network;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.jblas.DoubleMatrix;
 
 import com.annt.function.SigmoidFunction;
@@ -68,5 +75,39 @@ public class RBMNetwork extends BasicNetwork {
 	// 得到可视层输出
 	public DoubleMatrix getVOutput(DoubleMatrix feature) {
 		return sigmoid.output(weight.transpose(), feature, vbiass);
+	}
+
+	// 序列化存储神经网络
+	public static void saveNetwork(String path, RBMNetwork network) {
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(
+					new FileOutputStream(path));
+			out.writeObject(network);
+			out.close();
+		} catch (FileNotFoundException e) {
+			// log
+			e.printStackTrace();
+		} catch (IOException e) {
+			// log
+			e.printStackTrace();
+		}
+	}
+
+	// 载入神经网络
+	public static RBMNetwork loadNetwork(String path) {
+		try {
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream(
+					path));
+			RBMNetwork network = (RBMNetwork) in.readObject();
+			in.close();
+			return network;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

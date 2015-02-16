@@ -34,10 +34,12 @@ public class StandaloneApp extends BaseApp {
 
 	// 根据样本使用BP算法训练自编码器神经网络
 	public void getTargetNetwork(DoubleMatrix dataset, SimpleNetwork network,
-			double max_error, int time, double learning_rate, double lamda) {
+			double max_error, int time, double learning_rate, double lamda,
+			String bestPath) {
 		DoubleMatrix sample = null;
 		SimpleBackPropagation sbp = new SimpleBackPropagation(network);
 		UpdateParameters ups = new UpdateParameters(network);
+		double min_error = Double.MAX_VALUE;
 		ups.zeroAll();
 		for (int m = 0; m < time; m++) {
 			for (int i = 0; i < dataset.columns; i++) {
@@ -55,8 +57,13 @@ public class StandaloneApp extends BaseApp {
 				sample = dataset.getColumn(i);
 				error += evaluate.getError(sample, network.getOutput(sample));
 			}
-			System.out.println(error / dataset.columns);
-			if (error / dataset.columns < max_error) {
+			error = error / dataset.columns;
+			System.out.println((m + 1) + " : " + error);
+			if (error < min_error) {
+				SimpleNetwork.saveNetwork(bestPath, network);
+				min_error = error;
+			}
+			if (error < max_error) {
 				break;
 			}
 		}
@@ -64,10 +71,12 @@ public class StandaloneApp extends BaseApp {
 
 	// 根据样本使用CD-K算法初始化RBM
 	public void getTargetRBM(DoubleMatrix dataset, RBMNetwork rbm,
-			double max_error, int time, double learning_rate, int cd_k) {
+			double max_error, int time, double learning_rate, int cd_k,
+			String bestPath) {
 		DoubleMatrix sample = null;
 		CDKBackPropagation cdkBP = new CDKBackPropagation(rbm);
 		cdkBP.setK(cd_k);
+		double min_error = Double.MAX_VALUE;
 		for (int m = 0; m < time; m++) {
 			DoubleMatrix wu = DoubleMatrix.zeros(rbm.vn, rbm.hn);
 			DoubleMatrix vu = DoubleMatrix.zeros(rbm.vn);
@@ -94,8 +103,13 @@ public class StandaloneApp extends BaseApp {
 						.getHOutput(sample));
 				error += evaluate.getError(sample, restoreSign);
 			}
-			System.out.println(error / dataset.columns);
-			if (error / dataset.columns < max_error) {
+			error = error / dataset.columns;
+			System.out.println((m + 1) + " : " + error);
+			if (error < min_error) {
+				RBMNetwork.saveNetwork(bestPath, rbm);
+				min_error = error;
+			}
+			if (error < max_error) {
 				break;
 			}
 		}
@@ -106,9 +120,9 @@ public class StandaloneApp extends BaseApp {
 	public void RBMGenerateL1() throws FileNotFoundException,
 			ClassNotFoundException, IOException {
 		int idx = 100;
-		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts.dat");
-		RBMNetwork rbm = new RBMNetwork(25, 15, 100);
-		getTargetRBM(dataset, rbm, 0.3, 30, 0.5, 2);
+		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts_sub.dat");
+		RBMNetwork rbm = new RBMNetwork(25, 20, 100);
+		getTargetRBM(dataset, rbm, 0.3, 50, 1.2, 1, "best/ts_l1_best.nt");
 		SimpleNetwork firstNetwork = rbm.getNetwork();
 		// 存储第一层特征提取层网络
 		SimpleNetwork.saveNetwork("rbm/ts_l1", firstNetwork);
@@ -120,15 +134,24 @@ public class StandaloneApp extends BaseApp {
 		SimpleNetwork.saveNetwork("rbm/ts_l1r.nt", firstNetwork);
 	}
 
+	// @Test
+	public void GenerateBestInitNetwork() {
+		RBMNetwork rbm = RBMNetwork.loadNetwork("best/ts_l1_best.nt");
+		SimpleNetwork firstNetwork = rbm.getNetwork();
+		SimpleNetwork secondNetwork = rbm.getRNetwork();
+		firstNetwork.addUpperNetwork(secondNetwork);
+		SimpleNetwork.saveNetwork("network/ts_l1r.nt", firstNetwork);
+	}
+
 	// 载入RBM第一层模型使用BP
 	// @Test
 	public void L1Training() throws FileNotFoundException,
 			ClassNotFoundException, IOException {
-		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts.dat");
-		SimpleNetwork ts_l1r = SimpleNetwork
-				.loadNetwork("network/ts_l1r_g_2.nt");
-		getTargetNetwork(dataset, ts_l1r, 0.1, 10000, 0.8, 0.5);
-		SimpleNetwork.saveNetwork("network/ts_l1r_g_1.nt", ts_l1r);
+		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts_sub.dat");
+		SimpleNetwork ts_l1r = SimpleNetwork.loadNetwork("network/ts_l1r_1.nt");
+		getTargetNetwork(dataset, ts_l1r, 0.03, 50000, 1.2, 0.5,
+				"best/ts_l1r_best.nt");
+		SimpleNetwork.saveNetwork("network/ts_l1r_2.nt", ts_l1r);
 	}
 
 	// 查看信号恢复情况
@@ -136,10 +159,11 @@ public class StandaloneApp extends BaseApp {
 	public void SeeRestoreSign() throws FileNotFoundException,
 			ClassNotFoundException, IOException {
 		DoubleMatrix dataset = readDataset("/Users/terry/Desktop/dts_all.dat");
-		SimpleNetwork ts_l1r = SimpleNetwork
-				.loadNetwork("network/ts_l1r_g_1.nt");
-		int idx = 8000;
-		System.out.println(dataset.getColumn(idx));
-		System.out.println(ts_l1r.getOutput(dataset.getColumn(idx)));
+		SimpleNetwork ts_l1r = SimpleNetwork.loadNetwork("network/ts_l1r_2.nt");
+		int idx = 15000;
+		for (idx = 20000; idx < 20020; idx++) {
+			System.out.println(dataset.getColumn(idx));
+			System.out.println(ts_l1r.getOutput(dataset.getColumn(idx)));
+		}
 	}
 }
