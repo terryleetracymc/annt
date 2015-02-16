@@ -30,5 +30,10 @@
 			<artifactId>fastjson</artifactId>
 			<version>1.2.3</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jfree</groupId>
+			<artifactId>jfreechart</artifactId>
+			<version>1.0.14</version>
+		</dependency>
 	</dependencies>
 </project>
