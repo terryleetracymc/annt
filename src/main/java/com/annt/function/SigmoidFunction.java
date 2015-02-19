@@ -14,7 +14,7 @@ public class SigmoidFunction implements ActiveFunction {
 	 * 
 	 */
 	private static final long serialVersionUID = -2997571133636391147L;
-	
+
 	public SigmoidFunction() {
 	}
 
@@ -22,7 +22,7 @@ public class SigmoidFunction implements ActiveFunction {
 	public DoubleMatrix active(DoubleMatrix w, DoubleMatrix x, DoubleMatrix b) {
 		// 分有偏置和没有偏置的情况
 		if (b != null) {
-			return (w.transpose().mmul(x)).add(b);
+			return (w.transpose().mmul(x)).addColumnVector(b);
 		} else {
 			return (w.transpose().mmul(x));
 		}
@@ -43,7 +43,8 @@ public class SigmoidFunction implements ActiveFunction {
 	}
 
 	// sigmoid'(x)=sigmoid(x)*(1-sigmoid(x))
-	public DoubleMatrix derivative(DoubleMatrix w, DoubleMatrix x, DoubleMatrix b) {
+	public DoubleMatrix derivative(DoubleMatrix w, DoubleMatrix x,
+			DoubleMatrix b) {
 		DoubleMatrix output = output(w, x, b);
 		return output.mul(output.rsub(1));
 	}

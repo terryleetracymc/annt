@@ -116,16 +116,16 @@ public class ANNTest {
 		System.out.println(network.weights.get(1));
 	}
 
-	// @Test
+	@Test
 	public void generateSubDataset() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(
-				"/Users/terry/Desktop/dts_all.dat"));
+				"/Users/terry/Desktop/l1_feature_all.dat"));
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
-				"/Users/terry/Desktop/dts_sub.dat"));
+				"/Users/terry/Desktop/l1_feature_sub.dat"));
 		int sub_size = 1000;
 		DoubleMatrix dataset = (DoubleMatrix) in.readObject();
-		DoubleMatrix sub_data = new DoubleMatrix(25, sub_size);
+		DoubleMatrix sub_data = new DoubleMatrix(15, sub_size);
 		boolean isSelected[] = new boolean[214 * 274];
 		Random rand = new Random();
 		for (int i = 0; i < sub_size; i++) {
