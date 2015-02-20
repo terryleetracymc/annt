@@ -20,11 +20,11 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.3</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.armadillojava</groupId>
 			<artifactId>armadillojava</artifactId>
 			<version>4.000.0</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
@@ -34,6 +34,11 @@
 			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
 			<version>1.0.14</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacv</artifactId>
+			<version>0.10</version>
 		</dependency>
 	</dependencies>
 </project>
