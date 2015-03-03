@@ -16,7 +16,7 @@ import com.annt.app.BaseApp;
 import com.annt.evaluate._2LEvaluate;
 import com.annt.network.RBMNetwork;
 import com.annt.network.SimpleNetwork;
-import com.annt.obj.UpdateParameters;
+import com.annt.obj.NetworkUpdateParameters;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.trainning.SimpleBackPropagation;
 
@@ -51,7 +51,7 @@ public class TSStandaloneApp extends BaseApp {
 			String bestPath) {
 		DoubleMatrix sample = null;
 		SimpleBackPropagation sbp = new SimpleBackPropagation(network);
-		UpdateParameters ups = new UpdateParameters(network);
+		NetworkUpdateParameters ups = new NetworkUpdateParameters(network);
 		double min_error = Double.MAX_VALUE;
 		ups.zeroAll();
 		for (int m = 0; m < time; m++) {
@@ -61,7 +61,7 @@ public class TSStandaloneApp extends BaseApp {
 				ups.addAll(sbp.weights_updates, sbp.biass_updates);
 			}
 			ups.div(dataset.columns);
-			ups.addLamdaWeights(lamda);
+			ups.addLamdaWeights(lamda, network.weights);
 			network.updateNet(ups.wus, ups.bus, learning_rate);
 			// 计算误差
 			double error = 0.0;

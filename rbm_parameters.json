@@ -1,0 +1,12 @@
+{
+	"vDimension":250,
+	"hDimension":200,
+	"rbmSavePath":"",
+	"rbmBestSavePath":"",
+	"time":10,
+	"max_error":0.5,
+	"learning_rate":0.8,
+	"lamda":0.5,
+	"divRatio":100,
+	"groupNum":62
+}
