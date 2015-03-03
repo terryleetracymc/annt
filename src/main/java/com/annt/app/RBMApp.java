@@ -3,17 +3,15 @@ package com.annt.app;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
 import org.jblas.DoubleMatrix;
+import org.jblas.MatrixFunctions;
 
 import scala.Tuple2;
 
@@ -23,10 +21,9 @@ import com.annt.obj.RBMUpdateParameters;
 import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.utils.CommonUtils;
-import com.smiims.interf.sparkOperation;
 import com.smiims.obj.GeoTSShortVector;
 
-public class RBMApp extends SparkApp implements sparkOperation {
+public class RBMApp extends SparkApp {
 
 	/**
 	 * 
@@ -110,15 +107,26 @@ public class RBMApp extends SparkApp implements sparkOperation {
 				app.hDimension, app.divRatio);
 		final Broadcast<RBMNetwork> bRBMNetwork = jsc
 				.broadcast(localRBMNetwork);
+		double error = 0.0, min_error = Double.MAX_VALUE;
 		// 一次训练
-		RBMUpdateParameters updateParameters = app.train(bRBMNetwork,
-				groupedDataset);
-		//
-		updateParameters.div(datasetSize);
-		updateParameters.addLamdaWeight(0.05, localRBMNetwork.weight);
-		localRBMNetwork.updateRBM(updateParameters.wu, updateParameters.vu,
-				updateParameters.hu, app.learning_rate);
-		System.out.println(localRBMNetwork.weight);
+		for (int i = 0; i < app.time; i++) {
+			RBMUpdateParameters updateParameters = app.train(bRBMNetwork,
+					groupedDataset);
+			// 更新参数求平均
+			updateParameters.div(datasetSize);
+			updateParameters.addLamdaWeight(0.05, localRBMNetwork.weight);
+			localRBMNetwork.updateRBM(updateParameters.wu, updateParameters.vu,
+					updateParameters.hu, app.learning_rate);
+			DoubleMatrix errorVector = app
+					.getError(bRBMNetwork, groupedDataset);
+			error = errorVector.divi(datasetSize).norm2();
+			if (min_error > error) {
+				min_error = error;
+				RBMNetwork.saveNetwork(app.rbmBestSavePath, localRBMNetwork);
+			}
+			System.out.println("第" + (i + 1) + "次迭代：" + error);
+		}
+		RBMNetwork.saveNetwork(app.rbmSavePath, localRBMNetwork);
 		jsc.stop();
 	}
 
@@ -177,11 +185,51 @@ public class RBMApp extends SparkApp implements sparkOperation {
 				});
 	}
 
-	{
-		// 设置日志等级
-		Logger.getLogger("org").setLevel(Level.OFF);
-		Logger.getLogger("akka").setLevel(Level.OFF);
+	// 获得RBM还原误差
+	public DoubleMatrix getError(final Broadcast<RBMNetwork> rbmNetwork,
+			JavaPairRDD<Integer, Iterable<UnLabeledDoubleSample>> groupedDataset) {
+		JavaRDD<DoubleMatrix> errors = groupedDataset
+				.map(new Function<Tuple2<Integer, Iterable<UnLabeledDoubleSample>>, DoubleMatrix>() {
+
+					private static final long serialVersionUID = -8169574227613805716L;
+
+					RBMNetwork rbm = rbmNetwork.getValue();
+
+					public DoubleMatrix call(
+							Tuple2<Integer, Iterable<UnLabeledDoubleSample>> v)
+							throws Exception {
+						DoubleMatrix sum_error = DoubleMatrix.zeros(rbm.vn);
+						Iterator<UnLabeledDoubleSample> iterator = v._2
+								.iterator();
+						while (iterator.hasNext()) {
+							UnLabeledDoubleSample sample = iterator.next();
+							DoubleMatrix restoreSign = rbm.getVOutput(rbm
+									.getHOutput(sample.input));
+							DoubleMatrix error = MatrixFunctions
+									.abs(restoreSign.sub(sample.input));
+							sum_error.addi(error);
+						}
+						return sum_error;
+					}
+				});
+		return errors
+				.reduce(new Function2<DoubleMatrix, DoubleMatrix, DoubleMatrix>() {
+
+					private static final long serialVersionUID = -3901218453435043374L;
+
+					public DoubleMatrix call(DoubleMatrix v1, DoubleMatrix v2)
+							throws Exception {
+						return v1.add(v2);
+					}
+				});
 	}
+
+	// {
+	// // 设置日志等级
+	// Logger.getLogger("org").setLevel(Level.OFF);
+	// Logger.getLogger("akka").setLevel(Level.OFF);
+	//	}
+	
 	// 随机数种子
 	public Random seed = new Random();
 
@@ -214,8 +262,4 @@ public class RBMApp extends SparkApp implements sparkOperation {
 
 	// 数据集分组数
 	public int groupNum;
-
-	public JavaRDDLike operate(JavaRDDLike input, String[] args) {
-		return null;
-	}
 }
