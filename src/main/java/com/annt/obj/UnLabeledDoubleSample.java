@@ -11,9 +11,9 @@ public class UnLabeledDoubleSample implements Serializable {
 	 */
 	private static final long serialVersionUID = -1074832445779047544L;
 	// 输入数据
-	public DoubleMatrix input;
+	public DoubleMatrix data;
 
 	public UnLabeledDoubleSample(DoubleMatrix in) {
-		input = in;
+		data = in;
 	}
 }

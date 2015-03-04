@@ -48,6 +48,7 @@ public class RBMApp extends SparkApp {
 		lamda = json_conf.getDoubleValue("lamda");
 		divRatio = json_conf.getIntValue("divRatio");
 		groupNum = json_conf.getIntValue("groupNum");
+		rbm = new RBMNetwork(vDimension, hDimension, divRatio);
 	}
 
 	public static JavaRDD<UnLabeledDoubleSample> prepareDataset(
@@ -83,7 +84,7 @@ public class RBMApp extends SparkApp {
 
 					public UnLabeledDoubleSample call(UnLabeledDoubleSample v)
 							throws Exception {
-						v.input.addi(2000).divi(12000);
+						v.data.addi(2000).divi(12000);
 						return v;
 					}
 				});
@@ -164,7 +165,7 @@ public class RBMApp extends SparkApp {
 								rbm);
 						while (iterator.hasNext()) {
 							UnLabeledDoubleSample sample = iterator.next();
-							cdk.updateMatrixAndBias(sample.input);
+							cdk.updateMatrixAndBias(sample.data);
 							updateParameters.addAll(cdk.vbu, cdk.hbu, cdk.wu);
 						}
 						return updateParameters;
@@ -204,9 +205,9 @@ public class RBMApp extends SparkApp {
 						while (iterator.hasNext()) {
 							UnLabeledDoubleSample sample = iterator.next();
 							DoubleMatrix restoreSign = rbm.getVOutput(rbm
-									.getHOutput(sample.input));
+									.getHOutput(sample.data));
 							DoubleMatrix error = MatrixFunctions
-									.abs(restoreSign.sub(sample.input));
+									.abs(restoreSign.sub(sample.data));
 							sum_error.addi(error);
 						}
 						return sum_error;
@@ -228,8 +229,8 @@ public class RBMApp extends SparkApp {
 	// // 设置日志等级
 	// Logger.getLogger("org").setLevel(Level.OFF);
 	// Logger.getLogger("akka").setLevel(Level.OFF);
-	//	}
-	
+	// }
+
 	// 随机数种子
 	public Random seed = new Random();
 
@@ -262,4 +263,6 @@ public class RBMApp extends SparkApp {
 
 	// 数据集分组数
 	public int groupNum;
+
+	public RBMNetwork rbm;
 }

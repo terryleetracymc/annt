@@ -11,12 +11,12 @@ public class LabeledDoubleSample implements Serializable {
 	 */
 	private static final long serialVersionUID = 3681097625558850399L;
 	// 输入数据
-	public DoubleMatrix input;
-	// 理想输出
-	public DoubleMatrix ideal;
+	public DoubleMatrix data;
+	// 输出样本开始位置
+	public int oidx;
 
-	public LabeledDoubleSample(DoubleMatrix in, DoubleMatrix id) {
-		input = in;
-		ideal = id;
+	public LabeledDoubleSample(DoubleMatrix in, int i) {
+		data = in;
+		oidx = i;
 	}
 }
