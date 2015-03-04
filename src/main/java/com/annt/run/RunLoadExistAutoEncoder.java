@@ -12,30 +12,25 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.jblas.DoubleMatrix;
 
-import com.annt.app.RBMApp;
-import com.annt.network.RBMNetwork;
-import com.annt.obj.RBMUpdateParameters;
+import com.annt.app.AutoEncoderApp;
+import com.annt.network.SimpleNetwork;
+import com.annt.obj.NetworkUpdateParameters;
 import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.utils.CommonUtils;
 
-public class RunRBMApp implements Serializable {
+public class RunLoadExistAutoEncoder implements Serializable {
 
 	/**
-	 * Spark RBM并行训练
+	 * 神经网络并行训练
 	 */
-	private static final long serialVersionUID = 3852835608027401829L;
+	private static final long serialVersionUID = -3846400550619484863L;
 
-	RBMApp app;
+	AutoEncoderApp app;
 
-	//
-	public RunRBMApp(String rbmJSONPath) {
-		app = new RBMApp();
-		app.loadConf(rbmJSONPath);
-	}
-
-	public static void main(String args[]) {
-		RunRBMApp app = new RunRBMApp("rbm_parameters.json");
-		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
+	public static void main(String[] args) {
+		RunLoadExistAutoEncoder app = new RunLoadExistAutoEncoder(
+				"network/250_200_250.nt", "annt_parameters.json");
+		SparkConf conf = CommonUtils.readSparkConf("annt_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<UnLabeledDoubleSample> dataset = jsc
 				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_norm");
@@ -45,7 +40,20 @@ public class RunRBMApp implements Serializable {
 		jsc.stop();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	RunLoadExistAutoEncoder(String existANNPath, String confPath) {
+		app = new AutoEncoderApp();
+		app.loadExistANN(existANNPath);
+		app.loadConf(confPath);
+	}
+
+	static {
+		// 设置日志等级
+		Logger.getLogger("org").setLevel(Level.OFF);
+		Logger.getLogger("akka").setLevel(Level.OFF);
+		Logger.getLogger("apache").setLevel(Level.OFF);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void run(JavaSparkContext jsc, JavaRDDLike input, String[] args) {
 		JavaRDD<UnLabeledDoubleSample> dataset = (JavaRDD<UnLabeledDoubleSample>) input;
 		// 计算数据集的大小
@@ -53,33 +61,27 @@ public class RunRBMApp implements Serializable {
 		JavaPairRDD<Integer, Iterable<UnLabeledDoubleSample>> groupedDataset = app
 				.groupedDataset(dataset);
 		groupedDataset = groupedDataset.cache();
-		// 广播RBM数据
-		final Broadcast<RBMNetwork> bRBMNetwork = jsc.broadcast(app.rbm);
+		// 广播神经网络数据
+		final Broadcast<SimpleNetwork> bNetwork = jsc.broadcast(app.network);
 		double error = 0.0, min_error = Double.MAX_VALUE;
 		for (int i = 0; i < app.time; i++) {
-			RBMUpdateParameters updateParameters = app.train(bRBMNetwork,
+			NetworkUpdateParameters updateParameters = app.train(bNetwork,
 					groupedDataset);
 			// 更新参数求平均
 			updateParameters.div(datasetSize);
-			updateParameters.addLamdaWeight(app.lamda, app.rbm.weight);
-			app.rbm.updateRBM(updateParameters.wu, updateParameters.vu,
-					updateParameters.hu, app.learning_rate);
-			DoubleMatrix errorVector = app
-					.getError(bRBMNetwork, groupedDataset);
+			// 权值衰减参数
+			updateParameters.addLamdaWeights(app.lamda, app.network.weights);
+			app.network.updateNet(updateParameters.wus, updateParameters.bus,
+					app.learning_rate);
+			DoubleMatrix errorVector = app.getError(bNetwork, groupedDataset);
 			error = errorVector.divi(datasetSize).norm2();
 			if (min_error > error) {
 				min_error = error;
-				RBMNetwork.saveNetwork(app.rbmBestSavePath, app.rbm);
+				SimpleNetwork.saveNetwork(app.bestSavePath, app.network);
 			}
 			System.out.println("第" + (i + 1) + "次迭代：" + error);
 		}
-		RBMNetwork.saveNetwork(app.rbmSavePath, app.rbm);
-	}
-
-	static {
-		// 设置日志等级
-		Logger.getLogger("org").setLevel(Level.OFF);
-		Logger.getLogger("akka").setLevel(Level.OFF);
+		SimpleNetwork.saveNetwork(app.savePath, app.network);
 	}
 
 }

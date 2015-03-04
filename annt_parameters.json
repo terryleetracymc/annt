@@ -1,6 +1,9 @@
 {
-	"cell":[2,10,1],
-	"bias":[false,true,false],
-	"active":["com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction","com.annt.function.SigmoidFunction"],
-	"weight_ratio":100
+	"savePath":"network/250_200_250.nt",
+	"bestSavePath":"best/250_200_250.nt",
+	"time":100,
+	"max_error":0.5,
+	"learning_rate":0.8,
+	"lamda":0.005,
+	"groupNum":8
 }

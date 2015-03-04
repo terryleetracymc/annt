@@ -45,7 +45,7 @@ public class Test {
 
 					public UnLabeledDoubleSample call(UnLabeledDoubleSample v)
 							throws Exception {
-						v.input.addi(2000).divi(12000);
+						v.data.addi(2000).divi(12000);
 						return v;
 					}
 				});

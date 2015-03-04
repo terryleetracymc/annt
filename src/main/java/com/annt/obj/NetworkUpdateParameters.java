@@ -59,13 +59,13 @@ public class NetworkUpdateParameters implements Serializable {
 		}
 	}
 
-	public void div(int size) {
+	public void div(long datasetSize) {
 		for (int i = 0; i < wus.size(); i++) {
-			wus.get(i).divi(size);
+			wus.get(i).divi(datasetSize);
 		}
 		for (int i = 0; i < bus.size(); i++) {
 			if (bus.get(i) != null) {
-				bus.get(i).divi(size);
+				bus.get(i).divi(datasetSize);
 			}
 		}
 	}

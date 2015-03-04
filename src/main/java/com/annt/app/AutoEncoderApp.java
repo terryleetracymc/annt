@@ -3,8 +3,10 @@ package com.annt.app;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
@@ -20,7 +22,7 @@ import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.trainning.SimpleBackPropagation;
 import com.annt.utils.CommonUtils;
 
-public class AutoEncoder extends SparkApp {
+public class AutoEncoderApp extends SparkApp {
 
 	/**
 	 * 自编码器SparkApp
@@ -35,8 +37,6 @@ public class AutoEncoder extends SparkApp {
 
 	public double lamda;
 
-	public int divRatio;
-
 	public int groupNum;
 
 	public String savePath;
@@ -47,7 +47,7 @@ public class AutoEncoder extends SparkApp {
 
 	public SimpleNetwork network;
 
-	public AutoEncoder() {
+	public AutoEncoderApp() {
 	}
 
 	// 读取RBM配置
@@ -61,7 +61,6 @@ public class AutoEncoder extends SparkApp {
 		max_error = json_conf.getDoubleValue("max_error");
 		learning_rate = json_conf.getDoubleValue("learning_rate");
 		lamda = json_conf.getDoubleValue("lamda");
-		divRatio = json_conf.getIntValue("divRatio");
 		groupNum = json_conf.getIntValue("groupNum");
 	}
 
@@ -91,14 +90,54 @@ public class AutoEncoder extends SparkApp {
 		});
 	}
 
+	@SuppressWarnings("resource")
+	public static void main(String args[]) {
+		SparkConf conf = CommonUtils.readSparkConf("annt_spark_conf.json");
+		JavaSparkContext jsc = new JavaSparkContext(conf);
+		AutoEncoderApp encoder = new AutoEncoderApp();
+		encoder.loadConf("annt_parameters.json");
+		encoder.loadExistANN("network/250_200_250.nt");
+
+		JavaRDD<UnLabeledDoubleSample> dataset = jsc
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_norm");
+		dataset = dataset.sample(true, 0.1);
+		long datasetSize = dataset.count();
+
+		JavaPairRDD<Integer, Iterable<UnLabeledDoubleSample>> groupedDataset = encoder
+				.groupedDataset(dataset);
+		groupedDataset.cache();
+
+		final Broadcast<SimpleNetwork> bNetwork = jsc
+				.broadcast(encoder.network);
+		double error = Double.MAX_VALUE;
+
+		for (int i = 0; i < 100; i++) {
+			NetworkUpdateParameters ups = encoder.train(bNetwork,
+					groupedDataset);
+			ups.div(datasetSize);
+			ups.addLamdaWeights(encoder.lamda, encoder.network.weights);
+
+			encoder.network.updateNet(ups.wus, ups.bus, encoder.learning_rate);
+			
+			DoubleMatrix errorVector = encoder.getError(bNetwork,
+					groupedDataset);
+
+			error = errorVector.norm2();
+
+			System.out.println(error / datasetSize);
+		}
+
+		jsc.stop();
+	}
+
 	// 分组训练
 	public NetworkUpdateParameters train(
 			final Broadcast<SimpleNetwork> network,
 			JavaPairRDD<Integer, Iterable<UnLabeledDoubleSample>> groupedDataset) {
 		JavaRDD<NetworkUpdateParameters> updateParameters = groupedDataset
 				.map(new Function<Tuple2<Integer, Iterable<UnLabeledDoubleSample>>, NetworkUpdateParameters>() {
-					private static final long serialVersionUID = -7158777885700281251L;
 
+					private static final long serialVersionUID = -4206001993907080274L;
 					SimpleNetwork net = network.getValue();
 
 					public NetworkUpdateParameters call(
@@ -106,17 +145,16 @@ public class AutoEncoder extends SparkApp {
 							throws Exception {
 						SimpleBackPropagation sbp = new SimpleBackPropagation(
 								net);
-						NetworkUpdateParameters updateParameters = new NetworkUpdateParameters(
-								net);
 						Iterator<UnLabeledDoubleSample> iterator = v._2
 								.iterator();
+						NetworkUpdateParameters ups = new NetworkUpdateParameters(
+								net);
 						while (iterator.hasNext()) {
 							UnLabeledDoubleSample sample = iterator.next();
 							sbp.updateMatrixAndBias(sample.data, sample.data);
-							updateParameters.addAll(sbp.weights_updates,
-									sbp.biass_updates);
+							ups.addAll(sbp.weights_updates, sbp.biass_updates);
 						}
-						return updateParameters;
+						return ups;
 					}
 				});
 		return updateParameters

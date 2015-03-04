@@ -49,7 +49,7 @@ public class ANNTest {
 		in.close();
 	}
 
-	// @Test
+	@Test
 	public void OneBPTest() {
 		BasicLayer l1 = new BasicLayer(2, false, new SigmoidFunction());
 		BasicLayer l2 = new BasicLayer(4, true, new SigmoidFunction());
@@ -82,6 +82,7 @@ public class ANNTest {
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 1.8);
 			sbp.updateMatrixAndBias(inputs[3], outputs[3]);
 			network.updateNet(sbp.weights_updates, sbp.biass_updates, 1.8);
+			System.out.println(sbp.weights.getLast());
 		}
 		System.out.println(network.getOutput(inputs[0]));
 		System.out.println(network.getOutput(inputs[1]));
@@ -116,7 +117,7 @@ public class ANNTest {
 		System.out.println(network.weights.get(1));
 	}
 
-	@Test
+	// @Test
 	public void generateSubDataset() throws FileNotFoundException, IOException,
 			ClassNotFoundException {
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(

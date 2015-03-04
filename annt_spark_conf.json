@@ -3,14 +3,15 @@
 	"SPARK_BASE_CONF":
 	{	
 		"spark.executor.memory":"5g",
-		"spark.akka.frameSize":"10000",
-		"spark.default.parallelism":"30",
-		"spark.cores.max":"30"
+		"spark.akka.frameSize":"5000",
+		"spark.default.parallelism":"8",
+		"spark.cores.max":"8"
 	},
 	"jars":[
 		"hdfs://192.168.1.140:9000/user/terry/jars/radi_ts.jar",
 		"hdfs://192.168.1.140:9000/user/terry/jars/sparkInterface.jar",
+		"hdfs://192.168.1.140:9000/user/terry/jars/fastjson-1.2.3.jar",
 		"/Users/terry/Desktop/Tannt.jar"
 		],
-	"SPARK_APPNAME":"RBM Spark"
+	"SPARK_APPNAME":"ANN Spark"
 }
