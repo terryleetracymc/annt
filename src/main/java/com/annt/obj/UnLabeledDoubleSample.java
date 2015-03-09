@@ -13,6 +13,9 @@ public class UnLabeledDoubleSample implements Serializable {
 	// 输入数据
 	public DoubleMatrix data;
 
+	// 附带信息
+	public String info;
+
 	public UnLabeledDoubleSample(DoubleMatrix in) {
 		data = in;
 	}

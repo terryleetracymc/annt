@@ -10,9 +10,10 @@ import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.utils.CommonUtils;
 import com.smiims.obj.GeoTSShortVector;
 
-public class SparkANNTest {
+public class SparkSampleOperation {
 
 	// @Test
+	@SuppressWarnings("resource")
 	public void prepareDataset() {
 		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
@@ -28,6 +29,7 @@ public class SparkANNTest {
 	}
 
 	// @Test
+	@SuppressWarnings("resource")
 	public void normDataset() {
 		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);

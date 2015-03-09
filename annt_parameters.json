@@ -1,9 +1,9 @@
 {
-	"savePath":"network/250_200_250.nt",
+	"savePath":"network/250_200_250_b1.nt",
 	"bestSavePath":"best/250_200_250.nt",
-	"time":100,
+	"time":3000,
 	"max_error":0.5,
-	"learning_rate":0.8,
-	"lamda":0.005,
-	"groupNum":8
+	"learning_rate":0.25,
+	"lamda":0,
+	"groupNum":30
 }

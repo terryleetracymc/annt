@@ -2,8 +2,6 @@ package com.annt.run;
 
 import java.io.Serializable;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -33,24 +31,17 @@ public class RunLoadExistAutoEncoder implements Serializable {
 		SparkConf conf = CommonUtils.readSparkConf("annt_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<UnLabeledDoubleSample> dataset = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_norm");
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
 		dataset = dataset.sample(true, 0.1);
 		dataset = dataset.cache();
 		app.run(jsc, dataset, null);
 		jsc.stop();
 	}
 
-	RunLoadExistAutoEncoder(String existANNPath, String confPath) {
+	public RunLoadExistAutoEncoder(String existANNPath, String confPath) {
 		app = new AutoEncoderApp();
 		app.loadExistANN(existANNPath);
 		app.loadConf(confPath);
-	}
-
-	static {
-		// 设置日志等级
-		Logger.getLogger("org").setLevel(Level.OFF);
-		Logger.getLogger("akka").setLevel(Level.OFF);
-		Logger.getLogger("apache").setLevel(Level.OFF);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

@@ -2,8 +2,6 @@ package com.annt.run;
 
 import java.io.Serializable;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -38,9 +36,10 @@ public class RunRBMApp implements Serializable {
 		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<UnLabeledDoubleSample> dataset = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_norm");
-		dataset = dataset.sample(true, 0.1);
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
+		dataset = dataset.sample(true, 0.0001);
 		dataset = dataset.cache();
+		// System.out.println(dataset.count());
 		app.run(jsc, dataset, null);
 		jsc.stop();
 	}
@@ -74,12 +73,6 @@ public class RunRBMApp implements Serializable {
 			System.out.println("第" + (i + 1) + "次迭代：" + error);
 		}
 		RBMNetwork.saveNetwork(app.rbmSavePath, app.rbm);
-	}
-
-	static {
-		// 设置日志等级
-		Logger.getLogger("org").setLevel(Level.OFF);
-		Logger.getLogger("akka").setLevel(Level.OFF);
 	}
 
 }

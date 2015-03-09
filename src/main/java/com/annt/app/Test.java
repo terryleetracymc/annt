@@ -17,7 +17,7 @@ public class Test {
 		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<GeoTSShortVector> vectorsRDD = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_orgin");
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/MODIS/2000049_2010353/MOD13/h26v05/b1");
 		// System.out.println(vectorsRDD.count());
 		JavaRDD<UnLabeledDoubleSample> result = vectorsRDD
 				.map(new Function<GeoTSShortVector, UnLabeledDoubleSample>() {
@@ -32,6 +32,7 @@ public class Test {
 						}
 						UnLabeledDoubleSample result = new UnLabeledDoubleSample(
 								new DoubleMatrix(data));
+						result.info = v.x + "," + v.y;
 						return result;
 					}
 				});
@@ -49,9 +50,9 @@ public class Test {
 						return v;
 					}
 				});
-		result.repartition(4)
+		result.repartition(750)
 				.saveAsObjectFile(
-						"hdfs://192.168.1.140:9000/user/terry/ts_data/annt_train/trainning_norm");
+						"hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
 		jsc.stop();
 	}
 

@@ -15,6 +15,9 @@ public class LabeledDoubleSample implements Serializable {
 	// 输出样本开始位置
 	public int oidx;
 
+	//
+	public String info;
+
 	public LabeledDoubleSample(DoubleMatrix in, int i) {
 		data = in;
 		oidx = i;

@@ -3,9 +3,9 @@
 	"hDimension":200,
 	"rbmSavePath":"rbm/250_200.nt",
 	"rbmBestSavePath":"best/rbm_250_200.nt",
-	"time":10,
+	"time":30,
 	"max_error":0.5,
-	"learning_rate":0.8,
+	"learning_rate":1.2,
 	"lamda":0,
 	"divRatio":1,
 	"groupNum":30
