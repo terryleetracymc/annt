@@ -23,7 +23,7 @@ public class RunLoadExistAutoEncoder implements Serializable {
 	 */
 	private static final long serialVersionUID = -3846400550619484863L;
 
-	AutoEncoderApp app;
+	public AutoEncoderApp app;
 
 	public static void main(String[] args) {
 		RunLoadExistAutoEncoder app = new RunLoadExistAutoEncoder(
@@ -31,7 +31,7 @@ public class RunLoadExistAutoEncoder implements Serializable {
 		SparkConf conf = CommonUtils.readSparkConf("annt_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<UnLabeledDoubleSample> dataset = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h27v06/b1");
 		dataset = dataset.sample(true, 0.1);
 		dataset = dataset.cache();
 		app.run(jsc, dataset, null);
@@ -70,9 +70,11 @@ public class RunLoadExistAutoEncoder implements Serializable {
 				min_error = error;
 				SimpleNetwork.saveNetwork(app.bestSavePath, app.network);
 			}
+			if (i % 1000 == 0) {
+				SimpleNetwork.saveNetwork(app.savePath, app.network);
+			}
 			System.out.println("第" + (i + 1) + "次迭代：" + error);
 		}
-		SimpleNetwork.saveNetwork(app.savePath, app.network);
 	}
 
 }

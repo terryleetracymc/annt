@@ -10,7 +10,7 @@ import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.utils.CommonUtils;
 import com.smiims.obj.GeoTSShortVector;
 
-public class Test {
+public class GenerateNorm {
 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) {
@@ -52,7 +52,7 @@ public class Test {
 				});
 		result.repartition(750)
 				.saveAsObjectFile(
-						"hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
+						"hdfs://192.168.1.140:9000/user/terry/annt_train/trainning/h26v05/10year/b1");
 		jsc.stop();
 	}
 

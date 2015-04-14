@@ -2,7 +2,7 @@
 	"SPARK_URL":"spark://192.168.1.140:7077",
 	"SPARK_BASE_CONF":
 	{	
-		"spark.executor.memory":"3g",
+		"spark.executor.memory":"10g",
 		"spark.akka.frameSize":"10000"
 	},
 	"jars":[
@@ -11,5 +11,5 @@
 		"hdfs://192.168.1.140:9000/user/terry/jars/fastjson-1.2.3.jar",
 		"/Users/terry/Desktop/Tannt.jar"
 		],
-	"SPARK_APPNAME":"ANN Spark"
+	"SPARK_APPNAME":"Generate Features"
 }

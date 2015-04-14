@@ -1,11 +1,11 @@
 {
-	"vDimension":250,
-	"hDimension":200,
-	"rbmSavePath":"rbm/250_200.nt",
-	"rbmBestSavePath":"best/rbm_250_200.nt",
+	"vDimension":17,
+	"hDimension":13,
+	"rbmSavePath":"rbm/17_13.nt",
+	"rbmBestSavePath":"best/rbm_17_13.nt",
 	"time":30,
 	"max_error":0.5,
-	"learning_rate":1.2,
+	"learning_rate":1,
 	"lamda":0,
 	"divRatio":1,
 	"groupNum":30

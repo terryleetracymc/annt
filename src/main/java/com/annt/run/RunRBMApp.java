@@ -23,7 +23,7 @@ public class RunRBMApp implements Serializable {
 	 */
 	private static final long serialVersionUID = 3852835608027401829L;
 
-	RBMApp app;
+	public RBMApp app;
 
 	//
 	public RunRBMApp(String rbmJSONPath) {
@@ -36,8 +36,8 @@ public class RunRBMApp implements Serializable {
 		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
 		JavaRDD<UnLabeledDoubleSample> dataset = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1");
-		dataset = dataset.sample(true, 0.0001);
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning_norm/h26v05/b1/part-00000");
+//		dataset = dataset.sample(true, 0.0001);
 		dataset = dataset.cache();
 		// System.out.println(dataset.count());
 		app.run(jsc, dataset, null);
@@ -70,9 +70,11 @@ public class RunRBMApp implements Serializable {
 				min_error = error;
 				RBMNetwork.saveNetwork(app.rbmBestSavePath, app.rbm);
 			}
+			if (i % 1000 == 0) {
+				RBMNetwork.saveNetwork(app.rbmSavePath, app.rbm);
+			}
 			System.out.println("第" + (i + 1) + "次迭代：" + error);
 		}
-		RBMNetwork.saveNetwork(app.rbmSavePath, app.rbm);
 	}
 
 }

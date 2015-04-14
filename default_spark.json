@@ -2,14 +2,15 @@
 	"SPARK_URL":"spark://192.168.1.140:7077",
 	"SPARK_BASE_CONF":
 	{	
-		"spark.executor.memory":"3g",
-		"spark.akka.frameSize":"10000"
+		"spark.executor.memory":"5g",
+		"spark.akka.frameSize":"10000",
+		"spark.cores.max":32,
+		"spark.driver.maxResultSize":"3g"
 	},
 	"jars":[
 		"hdfs://192.168.1.140:9000/user/terry/jars/radi_ts.jar",
 		"hdfs://192.168.1.140:9000/user/terry/jars/sparkInterface.jar",
-		"hdfs://192.168.1.140:9000/user/terry/jars/fastjson-1.2.3.jar",
 		"/Users/terry/Desktop/Tannt.jar"
 		],
-	"SPARK_APPNAME":"ANN Spark"
+	"SPARK_APPNAME":"Default Spark"
 }

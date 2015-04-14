@@ -100,14 +100,26 @@ public class SimpleNetwork extends BasicNetwork {
 
 	// 移除顶层网络结构
 	public void removeLastLayer() {
-		if (layers.size() == 2) {
+		if (layers.size() <= 2) {
 			// log
+			// 只有两层结构无法删除
 			return;
 		}
 		// 删除对应的结构
 		layers.removeLast();
 		weights.removeLast();
 		biass.removeLast();
+	}
+
+	// 移除末层网络结构
+	public void removeFirstLayer() {
+		if (layers.size() <= 2) {
+			return;
+		}
+		layers.removeFirst();
+		weights.removeFirst();
+		biass.removeFirst();
+		layers.getFirst().bias = false;
 	}
 
 	// 序列化存储神经网络
