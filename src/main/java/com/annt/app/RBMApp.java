@@ -3,10 +3,8 @@ package com.annt.app;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
@@ -21,7 +19,6 @@ import com.annt.obj.RBMUpdateParameters;
 import com.annt.obj.UnLabeledDoubleSample;
 import com.annt.trainning.CDKBackPropagation;
 import com.annt.utils.CommonUtils;
-import com.smiims.obj.GeoTSShortVector;
 
 public class RBMApp extends SparkApp {
 
@@ -51,84 +48,7 @@ public class RBMApp extends SparkApp {
 		rbm = new RBMNetwork(vDimension, hDimension, divRatio);
 	}
 
-	public static JavaRDD<UnLabeledDoubleSample> prepareDataset(
-			JavaSparkContext jsc) {
-		JavaRDD<GeoTSShortVector> vectorsRDD = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/ts_data/MODIS/2000049_2010353/MOD13/h23v04/b1");
-		// 数据采样
-		vectorsRDD = vectorsRDD.sample(true, 0.00021);
-		JavaRDD<UnLabeledDoubleSample> doubleVectorsRDD = vectorsRDD
-				.map(new Function<GeoTSShortVector, UnLabeledDoubleSample>() {
-
-					/**
-					 * 将源数据转化为Double向量RDD
-					 */
-					private static final long serialVersionUID = -566735331026837033L;
-
-					public UnLabeledDoubleSample call(GeoTSShortVector v)
-							throws Exception {
-						double data[] = new double[v.data.length];
-						for (int i = 0; i < v.data.length; i++) {
-							data[i] = v.data[i];
-						}
-						UnLabeledDoubleSample result = new UnLabeledDoubleSample(
-								new DoubleMatrix(data));
-						return result;
-					}
-				});
-		// 数据归一化
-		doubleVectorsRDD = doubleVectorsRDD
-				.map(new Function<UnLabeledDoubleSample, UnLabeledDoubleSample>() {
-
-					private static final long serialVersionUID = -4340324733631709708L;
-
-					public UnLabeledDoubleSample call(UnLabeledDoubleSample v)
-							throws Exception {
-						v.data.addi(2000).divi(12000);
-						return v;
-					}
-				});
-		return doubleVectorsRDD;
-	}
-
 	public static void main(String args[]) {
-		SparkConf conf = CommonUtils.readSparkConf("rbm_spark_conf.json");
-		JavaSparkContext jsc = new JavaSparkContext(conf);
-		RBMApp app = new RBMApp();
-		app.loadConf("rbm_parameters.json");
-		// 数据集准备
-		JavaRDD<UnLabeledDoubleSample> dataset = prepareDataset(jsc);
-		long datasetSize = dataset.count();
-		// 数据集分组
-		JavaPairRDD<Integer, Iterable<UnLabeledDoubleSample>> groupedDataset = app
-				.groupedDataset(dataset);
-		groupedDataset = groupedDataset.cache();
-		// 定义RBM网络
-		RBMNetwork localRBMNetwork = new RBMNetwork(app.vDimension,
-				app.hDimension, app.divRatio);
-		final Broadcast<RBMNetwork> bRBMNetwork = jsc
-				.broadcast(localRBMNetwork);
-		double error = 0.0, min_error = Double.MAX_VALUE;
-		// 一次训练
-		for (int i = 0; i < app.time; i++) {
-			RBMUpdateParameters updateParameters = app.train(bRBMNetwork,
-					groupedDataset);
-			// 更新参数求平均
-			updateParameters.div(datasetSize);
-			updateParameters.addLamdaWeight(0.05, localRBMNetwork.weight);
-			localRBMNetwork.updateRBM(updateParameters.wu, updateParameters.vu,
-					updateParameters.hu, app.learning_rate);
-			DoubleMatrix errorVector = app
-					.getError(bRBMNetwork, groupedDataset);
-			error = errorVector.divi(datasetSize).norm2();
-			if (min_error > error) {
-				min_error = error;
-				RBMNetwork.saveNetwork(app.rbmBestSavePath, localRBMNetwork);
-			}
-			System.out.println("第" + (i + 1) + "次迭代：" + error);
-		}
-		RBMNetwork.saveNetwork(app.rbmSavePath, localRBMNetwork);
-		jsc.stop();
 	}
 
 	// 将数据集分组

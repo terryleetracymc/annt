@@ -12,9 +12,6 @@ import java.util.Set;
 
 import org.apache.spark.SparkConf;
 import org.jblas.DoubleMatrix;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -72,18 +69,6 @@ public class CommonUtils {
 			// log
 			e.printStackTrace();
 		}
-	}
-
-	// 存储图像到指定路径
-	public static void SaveImgToPath(String path, double data[], int width,
-			int height) {
-		Mat img = new Mat(width, height, CvType.CV_64FC1);
-		for (int m = 0; m < width; m++) {
-			for (int n = 0; n < height; n++) {
-				img.put(m, n, data[m + width * n]);
-			}
-		}
-		Highgui.imwrite(path, img);
 	}
 
 	// 自编码器

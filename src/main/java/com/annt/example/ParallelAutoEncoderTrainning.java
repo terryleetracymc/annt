@@ -17,16 +17,13 @@ public class ParallelAutoEncoderTrainning {
 				"best/17_13_17.nt", "annt_parameters.json");
 		SparkConf conf = CommonUtils.readSparkConf("annt_spark_conf.json");
 		JavaSparkContext jsc = new JavaSparkContext(conf);
-		JavaRDD<UnLabeledDoubleSample> dataset1 = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning/h27v06/select1l/b1");
-		JavaRDD<UnLabeledDoubleSample> dataset2 = jsc
-				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning/h26v05/1year1l/b1");
-		JavaRDD<UnLabeledDoubleSample> dataset = dataset1.union(dataset2);
+		JavaRDD<UnLabeledDoubleSample> dataset = jsc
+				.objectFile("hdfs://192.168.1.140:9000/user/terry/annt_train/trainning/selectSamples1l");
 		dataset.cache();
 		for (int m = 0; m < 500; m++) {
 			System.out.println(m);
 			JavaRDD<UnLabeledDoubleSample> sub_dataset = dataset.sample(true,
-					0.0005);
+					0.001);
 			sub_dataset = sub_dataset.repartition(app.app.groupNum).cache();
 			app.run(jsc, sub_dataset, null);
 		}

@@ -3,7 +3,7 @@
 	"bestSavePath":"best/17_13_17.nt",
 	"time":200,
 	"max_error":0.05,
-	"learning_rate":0.5,
-	"lamda":0.000001,
+	"learning_rate":1,
+	"lamda":0,
 	"groupNum":40
 }

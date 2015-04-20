@@ -8,9 +8,6 @@
 		"spark.cores.max":"20"
 	},
 	"jars":[
-		"hdfs://192.168.1.140:9000/user/terry/jars/radi_ts.jar",
-		"hdfs://192.168.1.140:9000/user/terry/jars/sparkInterface.jar",
-		"/Users/terry/Desktop/Tannt.jar"
 		],
 	"SPARK_APPNAME":"ANN Spark"
 }

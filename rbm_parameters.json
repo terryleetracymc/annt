@@ -1,8 +1,8 @@
 {
-	"vDimension":17,
-	"hDimension":13,
-	"rbmSavePath":"rbm/17_13.nt",
-	"rbmBestSavePath":"best/rbm_17_13.nt",
+	"vDimension":13,
+	"hDimension":10,
+	"rbmSavePath":"rbm/13_10.nt",
+	"rbmBestSavePath":"best/rbm_13_10.nt",
 	"time":30,
 	"max_error":0.5,
 	"learning_rate":1,

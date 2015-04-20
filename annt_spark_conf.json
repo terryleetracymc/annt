@@ -6,10 +6,7 @@
 		"spark.akka.frameSize":"10000"
 	},
 	"jars":[
-		"hdfs://192.168.1.140:9000/user/terry/jars/radi_ts.jar",
-		"hdfs://192.168.1.140:9000/user/terry/jars/sparkInterface.jar",
-		"hdfs://192.168.1.140:9000/user/terry/jars/fastjson-1.2.3.jar",
-		"/Users/terry/Desktop/Tannt.jar"
+		"hdfs://192.168.1.140:9000/user/terry/jars/fastjson-1.2.3.jar"
 		],
 	"SPARK_APPNAME":"ANN Spark"
 }
